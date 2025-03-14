@@ -1,0 +1,32 @@
+<!-- 
+ Folgender Code soll in einen Textblock auf einem Mebiskurs eingefügt werden.
+ Folge: Logo wird kleiner angezeigt und automatisches scrollen auf gewünschte Position.
+-->
+
+<p style="margin: 0; padding: 0; height: 0;">
+    <script>
+        window.addEventListener('load', function() {
+          
+            // reduce logo height
+            const logo_elem = document.getElementsByClassName('breadcrumb')[0];
+            logo_elem.style['margin-bottom'] = '10px';
+    
+            // scroll navbar to top of screen
+            const h_elem = document.getElementsByTagName('bycs-topbar')[0];
+            const nav_elem = document.getElementById('page-content');
+    
+            window.scrollTo({top: 250, behavior: 'instant'});
+    
+            setTimeout(function () {
+                const h_elem_height = h_elem.getBoundingClientRect().height;
+                // y-coordinate of the element in the current viewport
+                const nav_elem_y = nav_elem.getBoundingClientRect().top;
+                window.scrollTo({
+                    top: (nav_elem_y + window.scrollY - h_elem_height), 
+                    behavior: 'smooth'
+                });
+            }, 300);
+    
+        });
+    </script>
+</p>
