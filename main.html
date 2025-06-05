@@ -11,6 +11,26 @@
             const logo_elem = document.getElementsByClassName('breadcrumb')[0];
             logo_elem.style['margin-bottom'] = '10px';
     
+            // hide activity seperater
+            const elements = document.querySelectorAll('li[data-indexed="true"]');
+            elements.forEach(element => {
+                element.style.borderTop = '0';
+            });
+
+            // remove padding after activities
+            const activityItems = document.querySelectorAll(
+                '.activity-item.activityinline');
+            activityItems.forEach(item => {
+                item.style.padding = '0';
+            });
+
+            // remove borderradius from images in altcontent
+            const images = document.querySelectorAll(
+                '.activity-item .activity-altcontent img');
+            images.forEach(img => {
+                img.style.borderRadius = '0';
+            });
+            
             // scroll navbar to top of screen
             const h_elem = document.getElementsByTagName('bycs-topbar')[0];
             const nav_elem = document.getElementById('page-content');
@@ -28,5 +48,8 @@
             }, 300);
     
         });
+
+
+
     </script>
 </p>
