@@ -37,6 +37,12 @@
             chevronDownIcons.forEach(icon => {
                 icon.remove();
             });
+
+            // remove the "active" tab because in Segel there is no active tab for everyone
+            const markerElements = document.querySelectorAll('.marker');
+            markerElements.forEach(element => {
+                element.classList.remove('marker');
+            });
                     
             // scroll navbar to top of screen
             const h_elem = document.getElementsByTagName('bycs-topbar')[0];
