@@ -30,7 +30,14 @@
             images.forEach(img => {
                 img.style.borderRadius = '0';
             });
-            
+
+            // remove chevron-down Icons for navigation 
+            const chevronDownIcons = document.querySelectorAll(
+                'i.fa-chevron-down');
+            chevronDownIcons.forEach(icon => {
+                icon.remove();
+            });
+                    
             // scroll navbar to top of screen
             const h_elem = document.getElementsByTagName('bycs-topbar')[0];
             const nav_elem = document.getElementById('page-content');
