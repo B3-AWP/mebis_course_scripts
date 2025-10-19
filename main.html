@@ -1,68 +1,299 @@
 <!-- 
  Folgender Code soll in einen Textblock auf einem Mebiskurs eingefügt werden.
- Folge: Logo wird kleiner angezeigt und automatisches scrollen auf gewünschte Position.
+ Folge: Logo wird kleiner angezeigt, automatisches scrollen auf gewünschte Position
+ und verbessertes Styling für optionale Items und Überschriften.
 -->
-
 <p style="margin: 0; padding: 0; height: 0;">
-    <script>
-        window.addEventListener('load', function() {
+  <script>
+    window.addEventListener('load', function() {
+
+      // === BESTEHENDE MEBIS ANPASSUNGEN ===
+
+      // reduce logo height
+      const logo_elem = document.getElementsByClassName('breadcrumb')[0];
+      if (logo_elem) {
+        logo_elem.style['margin-bottom'] = '10px';
+      }
+
+      // hide activity seperater
+      const elements = document.querySelectorAll('li[data-indexed="true"]');
+      elements.forEach(element => {
+        element.style.borderTop = '0';
+      });
+
+      // remove padding after activities
+      const activityItems = document.querySelectorAll(
+        '.activity-item.activityinline');
+      activityItems.forEach(item => {
+        item.style.padding = '0';
+      });
+
+      // remove borderradius from images in altcontent
+      const images = document.querySelectorAll(
+        '.activity-item .activity-altcontent img');
+      images.forEach(img => {
+        img.style.borderRadius = '0';
+      });
+
+      // remove chevron-down Icons for navigation 
+      const chevronDownIcons = document.querySelectorAll(
+        'i.fa-chevron-down');
+      chevronDownIcons.forEach(icon => {
+        icon.remove();
+      });
+
+      // remove the "active" tab because in Segel there is no active tab for everyone
+      const markerElements = document.querySelectorAll('.marker');
+      markerElements.forEach(element => {
+        element.classList.remove('marker');
+      });
+
+      // === OPTIONAL ITEMS & ÜBERSCHRIFTEN STYLING ===
+
+      // CSS-Styling für optionale Items, Pflicht-Items und Überschriften hinzufügen
+      function addOptionalItemsCSS() {
+        const optionalItemsCSS = `
+          /* === OPTIONALE ITEMS STYLING === */
           
-            // reduce logo height
-            const logo_elem = document.getElementsByClassName('breadcrumb')[0];
-            logo_elem.style['margin-bottom'] = '10px';
-    
-            // hide activity seperater
-            const elements = document.querySelectorAll('li[data-indexed="true"]');
-            elements.forEach(element => {
-                element.style.borderTop = '0';
-            });
+          .itemoptional {
+            position: relative;
+          }
+          
+          /* Label für optionale Items */
+          label.itemoptional {
+            color: #333333 !important;
+            font-style: italic;
+            transition: all 0.2s ease;
+          }
+          
+          /* Hover-Effekt für optionale Items */
+          label.itemoptional:hover {
+            color: #000000 !important;
+          }
+          
+          /* "Optional" Badge hinzufügen */
+          label.itemoptional:after {
+            content: " (Optional)";
+            font-size: 0.75em;
+            color: #28a745;
+            font-weight: normal;
+            background: #e8f5e8;
+            padding: 2px 6px;
+            border-radius: 12px;
+            margin-left: 8px;
+            white-space: nowrap;
+          }
+          
+          /* Checkbox für optionale Items */
+          input.itemoptional[type="checkbox"] {
+            accent-color: #28a745;
+            transform: scale(0.95);
+          }
+          
+          /* Container für optionale Items */
+          li:has(.itemoptional) {
+            background-color: #f8f9fa;
+            border-left: 2px solid #28a745;
+            padding-left: 8px;
+            margin: 2px 0;
+            border-radius: 3px;
+          }
+          
+          /* Checked state für optionale Items */
+          input.itemoptional[type="checkbox"]:checked + label.itemoptional {
+            color: #28a745 !important;
+            font-weight: 500;
+          }
+          
+          input.itemoptional[type="checkbox"]:checked + label.itemoptional:after {
+            content: " (✓ Optional)";
+            background: #d4edda;
+            color: #155724;
+          }
+          
+          /* === PFLICHT-ITEMS STYLING === */
+          
+          /* Pflicht-Items (ohne Überschriften) */
+          label:not(.itemoptional).itemblack:not(.itemheading) {
+            font-weight: 500;
+            color: #333333 !important;
+            position: relative;
+          }
+          
+          /* "Pflicht" Badge für Pflicht-Items */
+          label:not(.itemoptional).itemblack:not(.itemheading):after {
+            content: " (Pflicht)";
+            font-size: 0.75em;
+            color: #dc3545;
+            font-weight: normal;
+            background: #ffeaea;
+            padding: 2px 6px;
+            border-radius: 12px;
+            margin-left: 8px;
+            white-space: nowrap;
+          }
+          
+          /* Container für Pflicht-Items (ohne Überschriften) */
+          li:has(label:not(.itemoptional).itemblack:not(.itemheading)) {
+            background-color: #fff8f8;
+            border-left: 2px solid #dc3545;
+            padding-left: 8px;
+            margin: 2px 0;
+            border-radius: 3px;
+          }
+          
+          /* Checked state für Pflicht-Items - wird grün */
+          input[type="checkbox"]:checked + label:not(.itemoptional).itemblack:not(.itemheading) {
+            color: #28a745 !important;
+            font-weight: 500;
+          }
+          
+          input[type="checkbox"]:checked + label:not(.itemoptional).itemblack:not(.itemheading):after {
+            content: " (✓ Pflicht)";
+            background: #d4edda;
+            color: #155724;
+          }
+          
+          /* Container für abgehakte Pflicht-Items wird grün */
+          li:has(input[type="checkbox"]:checked + label:not(.itemoptional).itemblack:not(.itemheading)) {
+            background-color: #f8f9fa;
+            border-left: 2px solid #28a745;
+          }
+          
+          /* === ÜBERSCHRIFTEN STYLING === */
+          
+          /* Überschriften-Labels */
+          label.itemheading {
+            font-size: 1.1em !important;
+            font-weight: 600 !important;
+            color: #2c3e50 !important;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin: 15px 0 8px 0 !important;
+            display: block !important;
+            position: relative;
+            padding-bottom: 5px;
+          }
+          
+          /* Unterstrich für Überschriften */
+          label.itemheading:after {
+            content: "";
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 40px;
+            height: 2px;
+            background: linear-gradient(90deg, #3498db, #2980b9);
+            border-radius: 1px;
+          }
+          
+          /* Container für Überschriften */
+          li:has(label.itemheading) {
+            background: none !important;
+            border: none !important;
+            padding: 0 !important;
+            margin: 15px 0 5px 0 !important;
+          }
+          
+          /* Überschriften ohne Pflicht-Symbol */
+          label.itemheading:before {
+            content: none !important;
+          }
+          
+          /* === RESPONSIVE ANPASSUNGEN === */
+          
+          @media (max-width: 768px) {
+            label.itemoptional:after,
+            label:not(.itemoptional).itemblack:not(.itemheading):after {
+              font-size: 0.65em;
+              padding: 1px 3px;
+              margin-left: 4px;
+            }
+            
+            label.itemheading {
+              font-size: 1.05em !important;
+              letter-spacing: 0.3px;
+            }
+            
+            /* Container-Padding für mobile reduzieren */
+            li:has(label:not(.itemoptional).itemblack:not(.itemheading)) {
+              padding-left: 6px;
+              border-left-width: 2px;
+            }
+          }
+          
+          /* Bessere Fokus-States für Accessibility */
+          input[type="checkbox"]:focus {
+            outline: 2px solid #4a90e2;
+            outline-offset: 2px;
+          }
+          
+          /* Smooth transitions für alle interaktiven Elemente */
+          li {
+            transition: all 0.3s ease;
+          }
+        `;
 
-            // remove padding after activities
-            const activityItems = document.querySelectorAll(
-                '.activity-item.activityinline');
-            activityItems.forEach(item => {
-                item.style.padding = '0';
-            });
+        // Style-Element erstellen und hinzufügen
+        const styleSheet = document.createElement('style');
+        styleSheet.textContent = optionalItemsCSS;
+        document.head.appendChild(styleSheet);
 
-            // remove borderradius from images in altcontent
-            const images = document.querySelectorAll(
-                '.activity-item .activity-altcontent img');
-            images.forEach(img => {
-                img.style.borderRadius = '0';
-            });
+        console.log('✓ Optional Items, Pflicht-Items & Überschriften Styling wurde hinzugefügt');
+      }
 
-            // remove chevron-down Icons for navigation 
-            const chevronDownIcons = document.querySelectorAll(
-                'i.fa-chevron-down');
-            chevronDownIcons.forEach(icon => {
-                icon.remove();
-            });
+      // Optional Items Styling anwenden
+      addOptionalItemsCSS();
 
-            // remove the "active" tab because in Segel there is no active tab for everyone
-            const markerElements = document.querySelectorAll('.marker');
-            markerElements.forEach(element => {
-                element.classList.remove('marker');
-            });
-                    
-            // scroll navbar to top of screen
-            const h_elem = document.getElementsByTagName('bycs-topbar')[0];
-            const nav_elem = document.getElementById('page-content');
-    
-            window.scrollTo({top: 200, behavior: 'instant'});
-    
-            setTimeout(function () {
-                const h_elem_height = h_elem.getBoundingClientRect().height;
-                // y-coordinate of the element in the current viewport
-                const nav_elem_y = nav_elem.getBoundingClientRect().top;
-                window.scrollTo({
-                    top: (nav_elem_y + window.scrollY - h_elem_height), 
-                    behavior: 'smooth'
-                });
-            }, 300);
-    
-        });
+      // === SCROLL NAVIGATION (am Ende) ===
+
+      // scroll navbar to top of screen
+      const h_elem = document.getElementsByTagName('bycs-topbar')[0];
+      const nav_elem = document.getElementById('page-content');
+
+      setTimeout(function() {
+        if (h_elem && nav_elem) {
+          const h_elem_height = h_elem.getBoundingClientRect().height;
+          // y-coordinate of the element in the current viewport
+          const nav_elem_y = nav_elem.getBoundingClientRect().top;
+          window.scrollTo({
+            top: (nav_elem_y + window.scrollY - h_elem_height),
+            behavior: 'smooth'
+          });
+        }
+      }, 300);
+
+      // === Button nächster Abschnitt in Mebis Büchern. ===
+      // Vorlage:
+      // <div class="row">
+      //   <div class="col-6 text-start">
+      //     <a href="https://lernplattform.mebis.bycs.de/course/view.php?id=2036416&section=10"
+      //       class="btn btn-primary btn-sm" 
+      //       role="button">Situation 1.1 Grundlagen Frontend</a>
+      //   </div>
+      //   <div class="col-6 text-end">
+      //     <a id="myTargetLink" 
+      //       href="#" 
+      //       class="btn btn-primary btn-sm" 
+      //       role="button">nächster Abschnitt</a>
+      //   </div>
+      // </div>
+
+      function copyNextButtonHref(targetId) {
+        const nextButton = document.querySelector('a.btn-next');
+        const targetLink = document.getElementById(targetId);
+        if (nextButton && targetLink) {
+          targetLink.href = nextButton.href;
+          console.log(`Copied href: ${nextButton.href}`);
+        } else {
+          console.warn('Next button or target link not found.');
+        }
+      }
+      copyNextButtonHref('myTargetLink');
 
 
 
-    </script>
+      console.log('✓ Alle Mebis Anpassungen wurden geladen');
+    });
+  </script>
 </p>
