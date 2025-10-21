@@ -55,14 +55,31 @@
         const optionalItemsCSS = `
           /* === OPTIONALE ITEMS STYLING === */
           
-          /* Sticky Tabs anpassen */
-          .nav.nav-tabs.format_onetopic-tabs {
-              position: sticky;
-              top: 95px; /* Höhe des Headers - siehe data-navbar-height="95" */
-              z-index: 999; /* Niedriger als der Header, aber über dem Content */
-              background-color: #ffffff;
-              box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+          /* Nur auf Tablets und Desktop anwenden */
+          @media (min-width: 768px) {
+              .nav.nav-tabs.format_onetopic-tabs {
+                  position: sticky;
+                  top: 95px;
+                  z-index: 999;
+                  background-color: #ffffff;
+                  transition: all 0.3s ease;
+              }
+
+              .nav.nav-tabs.format_onetopic-tabs.is-sticky {
+                  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                  border-bottom: 3px solid #ef7430;
+                  background-color: #fafafa;
+              }
           }
+
+          /* Auf Mobile explizit zurücksetzen (optional) */
+          @media (max-width: 767px) {
+              .nav.nav-tabs.format_onetopic-tabs {
+                  position: relative !important;
+                  top: auto !important;
+              }
+          }
+
 
           .itemoptional {
             position: relative;
