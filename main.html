@@ -43,7 +43,7 @@
       });
 
       // remove the "active" tab because in Segel there is no active tab for everyone
-      const markerElements = document.querySelectorAll('nav-item.marker');
+      const markerElements = document.querySelectorAll('.nav-item.marker');
       markerElements.forEach(element => {
         element.classList.remove('marker');
       });
@@ -55,6 +55,15 @@
         const optionalItemsCSS = `
           /* === OPTIONALE ITEMS STYLING === */
           
+          /* Sticky Tabs anpassen */
+          .nav.nav-tabs.format_onetopic-tabs {
+              position: sticky;
+              top: 95px; /* Höhe des Headers - siehe data-navbar-height="95" */
+              z-index: 999; /* Niedriger als der Header, aber über dem Content */
+              background-color: #ffffff;
+              box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+          }
+
           .itemoptional {
             position: relative;
           }
