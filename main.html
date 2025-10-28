@@ -53,7 +53,7 @@
       // CSS-Styling für optionale Items, Pflicht-Items und Überschriften hinzufügen
       function addOptionalItemsCSS() {
         const optionalItemsCSS = `
-          /* === OPTIONALE ITEMS STYLING === */
+          /* === STICKY NAVIGATION === */
           
           /* Nur auf Tablets und Desktop anwenden */
           @media (min-width: 768px) {
@@ -72,7 +72,7 @@
               }
           }
 
-          /* Auf Mobile explizit zurücksetzen (optional) */
+          /* Auf Mobile explizit zurücksetzen */
           @media (max-width: 767px) {
               .nav.nav-tabs.format_onetopic-tabs {
                   position: relative !important;
@@ -80,7 +80,25 @@
               }
           }
 
+          /* === TAG/LABEL BASIS-STYLING === */
+          
+          .status-tag {
+            display: inline-block;
+            font-size: 0.7em;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding: 3px 10px;
+            border-radius: 4px;
+            margin-left: 10px;
+            white-space: nowrap;
+            vertical-align: middle;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+            transition: all 0.2s ease;
+          }
 
+          /* === OPTIONALE ITEMS STYLING === */
+          
           .itemoptional {
             position: relative;
           }
@@ -88,7 +106,6 @@
           /* Label für optionale Items */
           label.itemoptional {
             color: #333333 !important;
-            font-style: italic;
             transition: all 0.2s ease;
           }
           
@@ -97,32 +114,45 @@
             color: #000000 !important;
           }
           
-          /* "Optional" Badge hinzufügen */
+          /* "Optional" Tag */
           label.itemoptional:after {
-            content: " (Optional)";
-            font-size: 0.75em;
+            content: "OPTIONAL";
+            display: inline-block;
+            font-size: 0.7em;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
             color: #28a745;
-            font-weight: normal;
-            background: #e8f5e8;
-            padding: 2px 6px;
-            border-radius: 12px;
-            margin-left: 8px;
+            background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+            padding: 3px 10px;
+            border-radius: 4px;
+            margin-left: 10px;
             white-space: nowrap;
+            vertical-align: middle;
+            box-shadow: 0 1px 3px rgba(40,167,69,0.2);
+            border: 1px solid #b8dbc4;
           }
           
           /* Checkbox für optionale Items */
           input.itemoptional[type="checkbox"] {
             accent-color: #28a745;
-            transform: scale(0.95);
+            transform: scale(1);
+            cursor: pointer;
           }
           
           /* Container für optionale Items */
           li:has(.itemoptional) {
-            background-color: #f8f9fa;
-            border-left: 2px solid #28a745;
-            padding-left: 8px;
-            margin: 2px 0;
-            border-radius: 3px;
+            background-color: #f8fff8;
+            border-left: 3px solid #28a745;
+            padding: 8px 12px;
+            margin: 4px 0;
+            border-radius: 4px;
+            transition: all 0.2s ease;
+          }
+          
+          li:has(.itemoptional):hover {
+            background-color: #f0f9f0;
+            transform: translateX(2px);
           }
           
           /* Checked state für optionale Items */
@@ -132,9 +162,10 @@
           }
           
           input.itemoptional[type="checkbox"]:checked + label.itemoptional:after {
-            content: " (✓ Optional)";
-            background: #d4edda;
-            color: #155724;
+            content: "✓ OPTIONAL";
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            border-color: #28a745;
           }
           
           /* === PFLICHT-ITEMS STYLING === */
@@ -146,26 +177,38 @@
             position: relative;
           }
           
-          /* "Pflicht" Badge für Pflicht-Items */
+          /* "Pflicht" Tag */
           label:not(.itemoptional).itemblack:not(.itemheading):after {
-            content: " (Pflicht)";
-            font-size: 0.75em;
+            content: "PFLICHT";
+            display: inline-block;
+            font-size: 0.7em;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
             color: #dc3545;
-            font-weight: normal;
-            background: #ffeaea;
-            padding: 2px 6px;
-            border-radius: 12px;
-            margin-left: 8px;
+            background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
+            padding: 3px 10px;
+            border-radius: 4px;
+            margin-left: 10px;
             white-space: nowrap;
+            vertical-align: middle;
+            box-shadow: 0 1px 3px rgba(220,53,69,0.2);
+            border: 1px solid #f1aeb5;
           }
           
-          /* Container für Pflicht-Items (ohne Überschriften) */
+          /* Container für Pflicht-Items */
           li:has(label:not(.itemoptional).itemblack:not(.itemheading)) {
             background-color: #fff8f8;
-            border-left: 2px solid #dc3545;
-            padding-left: 8px;
-            margin: 2px 0;
-            border-radius: 3px;
+            border-left: 3px solid #dc3545;
+            padding: 8px 12px;
+            margin: 4px 0;
+            border-radius: 4px;
+            transition: all 0.2s ease;
+          }
+          
+          li:has(label:not(.itemoptional).itemblack:not(.itemheading)):hover {
+            background-color: #fff0f0;
+            transform: translateX(2px);
           }
           
           /* Checked state für Pflicht-Items - wird grün */
@@ -175,30 +218,31 @@
           }
           
           input[type="checkbox"]:checked + label:not(.itemoptional).itemblack:not(.itemheading):after {
-            content: " (✓ Pflicht)";
-            background: #d4edda;
-            color: #155724;
+            content: "✓ ERLEDIGT";
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            border-color: #28a745;
           }
           
           /* Container für abgehakte Pflicht-Items wird grün */
           li:has(input[type="checkbox"]:checked + label:not(.itemoptional).itemblack:not(.itemheading)) {
-            background-color: #f8f9fa;
-            border-left: 2px solid #28a745;
+            background-color: #f8fff8;
+            border-left: 3px solid #28a745;
           }
           
           /* === ÜBERSCHRIFTEN STYLING === */
           
           /* Überschriften-Labels */
           label.itemheading {
-            font-size: 1.1em !important;
-            font-weight: 600 !important;
+            font-size: 1.15em !important;
+            font-weight: 700 !important;
             color: #2c3e50 !important;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin: 15px 0 8px 0 !important;
+            letter-spacing: 1px;
+            margin: 20px 0 10px 0 !important;
             display: block !important;
             position: relative;
-            padding-bottom: 5px;
+            padding-bottom: 8px;
           }
           
           /* Unterstrich für Überschriften */
@@ -207,10 +251,10 @@
             position: absolute;
             bottom: 0;
             left: 0;
-            width: 40px;
-            height: 2px;
+            width: 60px;
+            height: 3px;
             background: linear-gradient(90deg, #3498db, #2980b9);
-            border-radius: 1px;
+            border-radius: 2px;
           }
           
           /* Container für Überschriften */
@@ -218,10 +262,10 @@
             background: none !important;
             border: none !important;
             padding: 0 !important;
-            margin: 15px 0 5px 0 !important;
+            margin: 20px 0 8px 0 !important;
           }
           
-          /* Überschriften ohne Pflicht-Symbol */
+          /* Überschriften ohne zusätzliche Symbole */
           label.itemheading:before {
             content: none !important;
           }
@@ -232,31 +276,46 @@
             label.itemoptional:after,
             label:not(.itemoptional).itemblack:not(.itemheading):after {
               font-size: 0.65em;
-              padding: 1px 3px;
-              margin-left: 4px;
+              padding: 2px 6px;
+              margin-left: 6px;
+              letter-spacing: 0.3px;
             }
             
             label.itemheading {
               font-size: 1.05em !important;
-              letter-spacing: 0.3px;
+              letter-spacing: 0.5px;
             }
             
-            /* Container-Padding für mobile reduzieren */
-            li:has(label:not(.itemoptional).itemblack:not(.itemheading)) {
-              padding-left: 6px;
-              border-left-width: 2px;
+            li:has(label:not(.itemoptional).itemblack:not(.itemheading)),
+            li:has(.itemoptional) {
+              padding: 6px 10px;
+              border-left-width: 3px;
             }
           }
           
-          /* Bessere Fokus-States für Accessibility */
+          /* === ACCESSIBILITY === */
+          
+          /* Bessere Fokus-States */
           input[type="checkbox"]:focus {
+            outline: 3px solid #4a90e2;
+            outline-offset: 3px;
+            box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.2);
+          }
+          
+          label:focus-within {
             outline: 2px solid #4a90e2;
             outline-offset: 2px;
           }
           
-          /* Smooth transitions für alle interaktiven Elemente */
-          li {
-            transition: all 0.3s ease;
+          /* Smooth transitions */
+          li, label, input[type="checkbox"] {
+            transition: all 0.2s ease;
+          }
+          
+          /* Hover-Effekte für Checkboxen */
+          input[type="checkbox"]:hover {
+            transform: scale(1.1);
+            cursor: pointer;
           }
         `;
 
@@ -264,8 +323,6 @@
         const styleSheet = document.createElement('style');
         styleSheet.textContent = optionalItemsCSS;
         document.head.appendChild(styleSheet);
-
-        console.log('✓ Optional Items, Pflicht-Items & Überschriften Styling wurde hinzugefügt');
       }
 
       // Optional Items Styling anwenden
@@ -318,8 +375,6 @@
       copyNextButtonHref('myTargetLink');
 
 
-
-      console.log('✓ Alle Mebis Anpassungen wurden geladen');
     });
   </script>
 </p>
