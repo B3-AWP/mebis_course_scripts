@@ -103,13 +103,6 @@
             position: relative;
           }
 
-          li:has(.itemoptional) {
-            padding: 0px 8px;
-          }
-
-          li:has(label:not(.itemoptional).itemblack:not(.itemheading)) {
-            padding: 0px 8px;
-          }
           
           /* Label für optionale Items */
           label.itemoptional {
@@ -152,7 +145,7 @@
           li:has(.itemoptional) {
             background-color: #f8fff8;
             border-left: 3px solid #28a745;
-            padding: 8px 12px;
+            padding: 0px 8px;
             margin: 4px 0;
             border-radius: 4px;
             transition: all 0.2s ease;
@@ -208,7 +201,7 @@
           li:has(label:not(.itemoptional).itemblack:not(.itemheading)) {
             background-color: #fff8f8;
             border-left: 3px solid #dc3545;
-            padding: 8px 12px;
+            padding: 0px 8px;
             margin: 4px 0;
             border-radius: 4px;
             transition: all 0.2s ease;
