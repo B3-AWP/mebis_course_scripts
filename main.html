@@ -102,6 +102,14 @@
           .itemoptional {
             position: relative;
           }
+
+          li:has(.itemoptional) {
+            padding: 0px 8px;
+          }
+
+          li:has(label:not(.itemoptional).itemblack:not(.itemheading)) {
+            padding: 0px 8px;
+          }
           
           /* Label für optionale Items */
           label.itemoptional {
