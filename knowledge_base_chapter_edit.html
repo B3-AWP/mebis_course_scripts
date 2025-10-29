@@ -74,13 +74,16 @@
         const actionLinks = contentArea.querySelectorAll(".action-list a");
         actionLinks.forEach(function(link) {
           link.style.verticalAlign = "middle";
+          link.style.padding = "0";
+          link.style.lineHeight = "1";
+          // Remove Bootstrap btn classes that cause alignment issues
+          link.classList.remove("btn", "btn-link");
         });
 
         const trashIconLinks = contentArea.querySelectorAll(
           "a.action-icon.p-1");
         trashIconLinks.forEach(function(link) {
           link.classList.remove("p-1");
-          link.style.padding = "0";
         });
 
         // --- 7. Reduce margin between title and icons ---
