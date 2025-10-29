@@ -9,8 +9,14 @@
   4. Fixes list item vertical spacing by adjusting line height.
   5. Fixes icon alignment and padding issues (especially for the trash icon).
   6. Reduces the large margin between chapter titles and the action icons.
+
+  NOTE: This script only runs on screens with min-width: 768px
 */
     document.addEventListener("DOMContentLoaded", function() {
+      // Only execute on screens >= 768px
+      if (!window.matchMedia("(min-width: 768px)").matches) {
+        return;
+      }
 
       // --- 1. Show full chapter names ---
 
