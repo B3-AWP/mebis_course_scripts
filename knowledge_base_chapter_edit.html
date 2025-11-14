@@ -1,5 +1,4 @@
-<p>
-  <script>
+<script>
     /*
   This script modifies the Moodle Book Table of Contents block.
   It performs the following actions on DOM load:
@@ -9,6 +8,7 @@
   4. Fixes list item vertical spacing by adjusting line height.
   5. Fixes icon alignment and padding issues (especially for the trash icon).
   6. Reduces the large margin between chapter titles and the action icons.
+  7. Moves icons to a new line below the text.
 
   NOTE: This script only runs on screens with min-width: 768px
 */
@@ -86,18 +86,28 @@
           link.classList.remove("p-1");
         });
 
-        // --- 7. Reduce margin between title and icons ---
+        // --- 7. Move icons to new line ---
 
         const actionLists = contentArea.querySelectorAll(
-          ".action-list.ms-auto");
+          ".action-list");
         actionLists.forEach(function(list) {
-          // Remove the class that pushes it all the way to the right
-          list.classList.remove("ms-auto");
-          // Add a smaller, fixed margin
-          list.classList.add("ms-2");
+          // Remove all flex and margin classes
+          list.classList.remove("d-flex", "ms-auto", "ms-2");
+          // Force icons to new line
+          list.style.display = "block";
+          list.style.marginTop = "4px";
+          list.style.marginLeft = "0";
+          list.style.width = "100%";
+        });
+
+        // --- 8. Ensure parent div.d-flex allows wrapping ---
+
+        const flexDivs = contentArea.querySelectorAll("li > div.d-flex");
+        flexDivs.forEach(function(div) {
+          div.style.flexWrap = "wrap";
+          div.style.alignItems = "flex-start";
         });
       }
 
     });
-  </script>
-</p>
+</script>
