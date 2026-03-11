@@ -328,6 +328,31 @@
           a.btn-primary.btn-sm {
             color: white;
         }
+
+        /* Export von pdf knowledge-Base
+        @media print {
+        table {
+          break-inside: avoid;
+          page-break-inside: avoid;
+          width: 100%;
+        }
+
+        /* Thead auf jeder Seite wiederholen (bei großen Tabellen) */
+        thead {
+          display: table-header-group;
+        }
+
+        /* Tfoot auf jeder Seite wiederholen */
+        tfoot {
+          display: table-footer-group;
+        }
+
+        /* Zeilenumbruch innerhalb einer Zeile verhindern */
+        tr {
+          break-inside: avoid;
+          page-break-inside: avoid;
+        }
+      }
         `;
 
         // Style-Element erstellen und hinzufügen
