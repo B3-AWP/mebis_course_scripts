@@ -71,12 +71,20 @@
           margin: 0;
           font-size: 1.2em;
           font-weight: 700;
-          color: #2c3e50;
+          color: inherit;
           text-transform: uppercase;
           letter-spacing: 0.5px;
           padding-bottom: 6px;
           border-bottom: 3px solid #ef7430;
           display: inline-block;
+        }
+        .filterbutton {
+          color: inherit;
+        }
+        .filterbutton.selected {
+          background: #0f6cbf !important;
+          color: #fff !important;
+          border-color: #0f6cbf !important;
         }
       `;
       document.head.appendChild(headerCSS);
