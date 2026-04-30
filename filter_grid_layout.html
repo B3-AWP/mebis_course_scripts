@@ -29,10 +29,13 @@
         groups[firstChar].push(tile);
       });
 
-      // Bestehende Filterbuttons entfernen (alte Moodle-Filter)
+      // Bestehende Filterbuttons und Filter-Icon entfernen
       filterContainer.querySelectorAll('.filterbutton').forEach(function(btn) {
         btn.remove();
       });
+      // Filter-Icon entfernen (hat keine Funktion)
+      var filterIntro = document.getElementById('filterintro');
+      if (filterIntro) filterIntro.remove();
 
       // Sortierte Keys für die Buttons
       const sortedKeys = Object.keys(groups).sort(function(a, b) {
@@ -44,16 +47,124 @@
         return a.localeCompare(b);
       });
 
+      // === GRUPPEN-ÜBERSCHRIFTEN EINFÜGEN ===
+
+      // CSS für Überschriften-Tiles
+      var headerCSS = document.createElement('style');
+      headerCSS.textContent = `
+        li.tile-group-header {
+          width: 100% !important;
+          flex-basis: 100% !important;
+          max-width: 100% !important;
+          height: auto !important;
+          min-height: 0 !important;
+          background: none !important;
+          border: none !important;
+          padding: 18px 8px 6px 8px !important;
+          margin: 0 !important;
+          list-style: none;
+        }
+        li.tile-group-header:first-child {
+          padding-top: 0 !important;
+        }
+        li.tile-group-header h3 {
+          margin: 0;
+          font-size: 1.2em;
+          font-weight: 700;
+          color: #2c3e50;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+          padding-bottom: 6px;
+          border-bottom: 3px solid #ef7430;
+          display: inline-block;
+        }
+      `;
+      document.head.appendChild(headerCSS);
+
+      // Überschrift-Text aus erstem Tile der Gruppe ableiten
+      // z.B. "1 Frontend" → Überschrift "1 Frontend", "Prüfung" → "Prüfung"
+      function getGroupTitle(char, tiles) {
+        // Suche ein Tile, dessen Titel nur "Zahl Thema" ist (ohne Dezimalstelle)
+        for (var i = 0; i < tiles.length; i++) {
+          var h3 = tiles[i].querySelector('h3');
+          if (!h3) continue;
+          var title = h3.textContent.trim();
+          // Bevorzuge Titel ohne Punkt (z.B. "1 Frontend" statt "1.2 HTML")
+          if (!isNaN(char) && /^\d+\s/.test(title) && !/^\d+\./.test(title)) {
+            return title;
+          }
+        }
+        // Fallback: erstes Tile der Gruppe
+        var firstH3 = tiles[0].querySelector('h3');
+        return firstH3 ? firstH3.textContent.trim() : char;
+      }
+
+      // Überschriften vor jede Gruppe einfügen
+      var headerElements = [];
+      sortedKeys.forEach(function(char) {
+        var tiles = groups[char];
+        var firstTile = tiles[0];
+
+        var header = document.createElement('li');
+        header.className = 'tile-group-header';
+        header.setAttribute('data-group', char);
+        var h3 = document.createElement('h3');
+        h3.textContent = getGroupTitle(char, tiles);
+        header.appendChild(h3);
+
+        firstTile.parentNode.insertBefore(header, firstTile);
+        headerElements.push(header);
+      });
+
+      // === KURSINDEX (linke Navigation) VORBEREITEN ===
+
+      // Zuordnung: data-section → Gruppen-Char erstellen
+      var sectionToGroup = {};
+      Object.keys(groups).forEach(function(char) {
+        groups[char].forEach(function(tile) {
+          var sec = tile.getAttribute('data-section');
+          if (sec) sectionToGroup[sec] = char;
+        });
+      });
+
+      // Kursindex-Sections bei jedem Aufruf frisch suchen
+      // (Moodle rendert den Kursindex ggf. asynchron per JS)
+      function getCourseIndexSections() {
+        return document.querySelectorAll(
+          '.courseindex-section[data-number]'
+        );
+      }
+
+      // === FILTER-LOGIK ===
+
       function filterByChar(char) {
+        // Tiles filtern
         getTiles().forEach(function(tile) {
           if (char === 'all') {
             tile.style.display = '';
             return;
           }
-          const h3 = tile.querySelector('h3');
+          var h3 = tile.querySelector('h3');
           if (!h3) { tile.style.display = 'none'; return; }
-          const firstChar = h3.textContent.trim().charAt(0).toUpperCase();
+          var firstChar = h3.textContent.trim().charAt(0).toUpperCase();
           tile.style.display = (firstChar === char) ? '' : 'none';
+        });
+
+        // Überschriften: nur bei "Alle" anzeigen
+        headerElements.forEach(function(header) {
+          header.style.display = (char === 'all') ? '' : 'none';
+        });
+
+        // Kursindex (linke Navigation) filtern — frisch suchen
+        getCourseIndexSections().forEach(function(section) {
+          var num = section.getAttribute('data-number');
+          if (char === 'all') {
+            section.style.display = '';
+            return;
+          }
+          // Section anzeigen wenn sie zur aktiven Gruppe gehört
+          var group = sectionToGroup[num];
+          section.style.display = (group === char) ? '' : 'none';
         });
       }
 
