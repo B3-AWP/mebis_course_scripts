@@ -1,0 +1,127 @@
+<!--
+  Folgender Code soll in einen Textblock auf einem Mebiskurs mit Tiles-Format eingefügt werden.
+  Folge: Die Filterbuttons filtern die Tile-Kacheln (li.tile) korrekt nach Sektionen.
+-->
+<p style="margin: 0; padding: 0; height: 0;">
+  <script>
+    window.addEventListener('load', function() {
+
+      // === DYNAMISCHE FILTER NACH TITEL-ANFANGSZEICHEN ===
+
+      const tilesContainer = document.getElementById('multi_section_tiles');
+      const filterContainer = document.getElementById('filterbuttons');
+
+      if (!tilesContainer || !filterContainer) return;
+
+      function getTiles() {
+        return tilesContainer.querySelectorAll('li.tile[data-section]');
+      }
+
+      // Tiles nach Anfangszeichen des Titels gruppieren
+      const groups = {};
+      getTiles().forEach(function(tile) {
+        const h3 = tile.querySelector('h3');
+        if (!h3) return;
+        const title = h3.textContent.trim();
+        if (!title) return;
+        const firstChar = title.charAt(0).toUpperCase();
+        if (!groups[firstChar]) groups[firstChar] = [];
+        groups[firstChar].push(tile);
+      });
+
+      // Bestehende Filterbuttons entfernen (alte Moodle-Filter)
+      filterContainer.querySelectorAll('.filterbutton').forEach(function(btn) {
+        btn.remove();
+      });
+
+      // Sortierte Keys für die Buttons
+      const sortedKeys = Object.keys(groups).sort(function(a, b) {
+        // Zahlen zuerst, dann Buchstaben
+        const aNum = !isNaN(a), bNum = !isNaN(b);
+        if (aNum && !bNum) return -1;
+        if (!aNum && bNum) return 1;
+        if (aNum && bNum) return parseInt(a) - parseInt(b);
+        return a.localeCompare(b);
+      });
+
+      function filterByChar(char) {
+        getTiles().forEach(function(tile) {
+          if (char === 'all') {
+            tile.style.display = '';
+            return;
+          }
+          const h3 = tile.querySelector('h3');
+          if (!h3) { tile.style.display = 'none'; return; }
+          const firstChar = h3.textContent.trim().charAt(0).toUpperCase();
+          tile.style.display = (firstChar === char) ? '' : 'none';
+        });
+      }
+
+      function setActive(activeBtn) {
+        filterContainer.querySelectorAll('.filterbutton').forEach(function(b) {
+          b.classList.remove('selected');
+        });
+        activeBtn.classList.add('selected');
+      }
+
+      // Buttons für jedes Anfangszeichen erstellen
+      sortedKeys.forEach(function(char) {
+        var btn = document.createElement('div');
+        btn.className = 'filterbutton';
+        btn.textContent = char;
+        btn.addEventListener('click', function(e) {
+          e.preventDefault();
+          e.stopPropagation();
+          setActive(btn);
+          filterByChar(char);
+        });
+        filterContainer.appendChild(btn);
+      });
+
+      // "Alle"-Button erstellen
+      var allBtn = document.createElement('div');
+      allBtn.className = 'filterbutton selected';
+      allBtn.textContent = 'Alle';
+      allBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        setActive(allBtn);
+        filterByChar('all');
+      });
+      filterContainer.appendChild(allBtn);
+
+      // === BESTEHENDE MEBIS ANPASSUNGEN (wie main.html) ===
+
+      // Logo-Höhe reduzieren
+      const logo_elem = document.getElementsByClassName('breadcrumb')[0];
+      if (logo_elem) {
+        logo_elem.style['margin-bottom'] = '10px';
+      }
+
+      // Chevron-Down Icons entfernen
+      const chevronDownIcons = document.querySelectorAll('i.fa-chevron-down');
+      chevronDownIcons.forEach(function(icon) { icon.remove(); });
+
+      // "active" Tab-Marker entfernen
+      const markerElements = document.querySelectorAll('.nav-item.marker');
+      markerElements.forEach(function(element) { element.classList.remove('marker'); });
+
+      // === SCROLL NAVIGATION ===
+
+      const h_elem = document.getElementsByTagName('bycs-topbar')[0];
+      const nav_elem = document.getElementById('page-content');
+
+      setTimeout(function() {
+        if (h_elem && nav_elem) {
+          const h_elem_height = h_elem.getBoundingClientRect().height;
+          const nav_elem_y = nav_elem.getBoundingClientRect().top;
+          window.scrollTo({
+            top: (nav_elem_y + window.scrollY - h_elem_height),
+            behavior: 'smooth'
+          });
+        }
+      }, 300);
+
+    });
+  </script>
+</p>
