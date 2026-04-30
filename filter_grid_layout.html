@@ -201,38 +201,6 @@
       });
       filterContainer.appendChild(allBtn);
 
-      // === BESTEHENDE MEBIS ANPASSUNGEN (wie main.html) ===
-
-      // Logo-Höhe reduzieren
-      const logo_elem = document.getElementsByClassName('breadcrumb')[0];
-      if (logo_elem) {
-        logo_elem.style['margin-bottom'] = '10px';
-      }
-
-      // Chevron-Down Icons entfernen
-      const chevronDownIcons = document.querySelectorAll('i.fa-chevron-down');
-      chevronDownIcons.forEach(function(icon) { icon.remove(); });
-
-      // "active" Tab-Marker entfernen
-      const markerElements = document.querySelectorAll('.nav-item.marker');
-      markerElements.forEach(function(element) { element.classList.remove('marker'); });
-
-      // === SCROLL NAVIGATION ===
-
-      const h_elem = document.getElementsByTagName('bycs-topbar')[0];
-      const nav_elem = document.getElementById('page-content');
-
-      setTimeout(function() {
-        if (h_elem && nav_elem) {
-          const h_elem_height = h_elem.getBoundingClientRect().height;
-          const nav_elem_y = nav_elem.getBoundingClientRect().top;
-          window.scrollTo({
-            top: (nav_elem_y + window.scrollY - h_elem_height),
-            behavior: 'smooth'
-          });
-        }
-      }, 300);
-
     });
   </script>
 </p>
