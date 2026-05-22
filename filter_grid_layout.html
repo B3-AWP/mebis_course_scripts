@@ -1,55 +1,75 @@
-<!--
-  Folgender Code soll in einen Textblock auf einem Mebiskurs mit Tiles-Format eingefügt werden.
-  Folge: Die Filterbuttons filtern die Tile-Kacheln (li.tile) korrekt nach Sektionen.
--->
 <p style="margin: 0; padding: 0; height: 0;">
   <script>
     window.addEventListener('load', function() {
 
-      // === DYNAMISCHE FILTER NACH TITEL-ANFANGSZEICHEN ===
-
       const tilesContainer = document.getElementById('multi_section_tiles');
       const filterContainer = document.getElementById('filterbuttons');
-
       if (!tilesContainer || !filterContainer) return;
 
       function getTiles() {
         return tilesContainer.querySelectorAll('li.tile[data-section]');
       }
 
-      // Tiles nach Anfangszeichen des Titels gruppieren
+      // Schritt 1: Gruppen UND Originaltitel in EINEM Durchlauf erfassen
       const groups = {};
+      const originalGroupTitles = {};
+
       getTiles().forEach(function(tile) {
         const h3 = tile.querySelector('h3');
         if (!h3) return;
         const title = h3.textContent.trim();
         if (!title) return;
         const firstChar = title.charAt(0).toUpperCase();
-        if (!groups[firstChar]) groups[firstChar] = [];
+
+        if (!groups[firstChar]) {
+          groups[firstChar] = [];
+          // Präfix aus Originaltitel extrahieren
+          if (title.indexOf('-') !== -1) {
+            originalGroupTitles[firstChar] = title.split('-')[0].trim();
+          } else {
+            originalGroupTitles[firstChar] = title.split(' ')[0].trim();
+          }
+        }
         groups[firstChar].push(tile);
       });
 
-      // Bestehende Filterbuttons und Filter-Icon entfernen
-      filterContainer.querySelectorAll('.filterbutton').forEach(function(btn) {
+      // Schritt 2: JETZT erst Präfix aus Anzeigenamen entfernen
+      Object.keys(groups).forEach(function(char) {
+        groups[char].forEach(function(tile) {
+          tile.setAttribute('data-group', char);
+          var h3 = tile.querySelector('h3');
+          if (!h3) return;
+          var title = h3.textContent.trim();
+          var numbered = title.replace(/^[\wÄÖÜäöüß]+-(\d+)\s*/, '$1 ').trim();
+          if (numbered !== title) {
+            h3.textContent = numbered || 'Übersicht';
+          } else {
+            var prefix = originalGroupTitles[char] || '';
+            var rest = prefix && title.startsWith(prefix)
+              ? title.substring(prefix.length).replace(/^[-\s]+/, '').trim()
+              : title;
+            h3.textContent = rest || title;
+          }
+        });
+      });
+
+      // Bestehende Buttons entfernen
+      filterContainer.querySelectorAll('.filterbutton').forEach(function(
+        btn) {
         btn.remove();
       });
-      // Filter-Icon entfernen (hat keine Funktion)
       var filterIntro = document.getElementById('filterintro');
       if (filterIntro) filterIntro.remove();
 
-      // Sortierte Keys für die Buttons
       const sortedKeys = Object.keys(groups).sort(function(a, b) {
-        // Zahlen zuerst, dann Buchstaben
-        const aNum = !isNaN(a), bNum = !isNaN(b);
+        const aNum = !isNaN(a),
+          bNum = !isNaN(b);
         if (aNum && !bNum) return -1;
         if (!aNum && bNum) return 1;
         if (aNum && bNum) return parseInt(a) - parseInt(b);
         return a.localeCompare(b);
       });
 
-      // === GRUPPEN-ÜBERSCHRIFTEN EINFÜGEN ===
-
-      // CSS für Überschriften-Tiles
       var headerCSS = document.createElement('style');
       headerCSS.textContent = `
         li.tile-group-header {
@@ -64,9 +84,7 @@
           margin: 0 !important;
           list-style: none;
         }
-        li.tile-group-header:first-child {
-          padding-top: 0 !important;
-        }
+        li.tile-group-header:first-child { padding-top: 0 !important; }
         li.tile-group-header h3 {
           margin: 0;
           font-size: 1.2em;
@@ -78,55 +96,36 @@
           border-bottom: 3px solid #ef7430;
           display: inline-block;
         }
-        .filterbutton {
-          color: inherit;
-        }
+        .filterbutton { color: inherit; }
         .filterbutton.selected {
           background: #0f6cbf !important;
           color: #fff !important;
           border-color: #0f6cbf !important;
         }
+        body.format-tiles.limitedwidth:not(.path-mod) #page.drawers .main-inner {
+          width: 1280px !important;
+        }
       `;
       document.head.appendChild(headerCSS);
 
-      // Überschrift-Text aus erstem Tile der Gruppe ableiten
-      // z.B. "1 Frontend" → Überschrift "1 Frontend", "Prüfung" → "Prüfung"
-      function getGroupTitle(char, tiles) {
-        // Suche ein Tile, dessen Titel nur "Zahl Thema" ist (ohne Dezimalstelle)
-        for (var i = 0; i < tiles.length; i++) {
-          var h3 = tiles[i].querySelector('h3');
-          if (!h3) continue;
-          var title = h3.textContent.trim();
-          // Bevorzuge Titel ohne Punkt (z.B. "1 Frontend" statt "1.2 HTML")
-          if (!isNaN(char) && /^\d+\s/.test(title) && !/^\d+\./.test(title)) {
-            return title;
-          }
-        }
-        // Fallback: erstes Tile der Gruppe
-        var firstH3 = tiles[0].querySelector('h3');
-        return firstH3 ? firstH3.textContent.trim() : char;
-      }
-
-      // Überschriften vor jede Gruppe einfügen
+      // Gruppenheader einfügen — nur bei Gruppen mit mehr als 1 Tile
       var headerElements = [];
       sortedKeys.forEach(function(char) {
         var tiles = groups[char];
-        var firstTile = tiles[0];
+        if (tiles.length < 1) return;
 
         var header = document.createElement('li');
         header.className = 'tile-group-header';
         header.setAttribute('data-group', char);
         var h3 = document.createElement('h3');
-        h3.textContent = getGroupTitle(char, tiles);
+        h3.textContent = originalGroupTitles[char] || char;
         header.appendChild(h3);
 
-        firstTile.parentNode.insertBefore(header, firstTile);
+        tiles[0].parentNode.insertBefore(header, tiles[0]);
         headerElements.push(header);
       });
 
-      // === KURSINDEX (linke Navigation) VORBEREITEN ===
-
-      // Zuordnung: data-section → Gruppen-Char erstellen
+      // Kursindex-Zuordnung
       var sectionToGroup = {};
       Object.keys(groups).forEach(function(char) {
         groups[char].forEach(function(tile) {
@@ -135,59 +134,48 @@
         });
       });
 
-      // Kursindex-Sections bei jedem Aufruf frisch suchen
-      // (Moodle rendert den Kursindex ggf. asynchron per JS)
       function getCourseIndexSections() {
         return document.querySelectorAll(
-          '.courseindex-section[data-number]'
-        );
+          '.courseindex-section[data-number]');
       }
 
-      // === FILTER-LOGIK ===
-
+      // Filter-Logik
       function filterByChar(char) {
-        // Tiles filtern
         getTiles().forEach(function(tile) {
           if (char === 'all') {
             tile.style.display = '';
             return;
           }
-          var h3 = tile.querySelector('h3');
-          if (!h3) { tile.style.display = 'none'; return; }
-          var firstChar = h3.textContent.trim().charAt(0).toUpperCase();
-          tile.style.display = (firstChar === char) ? '' : 'none';
+          tile.style.display =
+            (tile.getAttribute('data-group') === char) ? '' : 'none';
         });
-
-        // Überschriften: nur bei "Alle" anzeigen
         headerElements.forEach(function(header) {
           header.style.display = (char === 'all') ? '' : 'none';
         });
-
-        // Kursindex (linke Navigation) filtern — frisch suchen
         getCourseIndexSections().forEach(function(section) {
           var num = section.getAttribute('data-number');
           if (char === 'all') {
             section.style.display = '';
             return;
           }
-          // Section anzeigen wenn sie zur aktiven Gruppe gehört
-          var group = sectionToGroup[num];
-          section.style.display = (group === char) ? '' : 'none';
+          section.style.display =
+            (sectionToGroup[num] === char) ? '' : 'none';
         });
       }
 
       function setActive(activeBtn) {
-        filterContainer.querySelectorAll('.filterbutton').forEach(function(b) {
+        filterContainer.querySelectorAll('.filterbutton').forEach(function(
+          b) {
           b.classList.remove('selected');
         });
         activeBtn.classList.add('selected');
       }
 
-      // Buttons für jedes Anfangszeichen erstellen
+      // Filter-Buttons mit Klartextnamen
       sortedKeys.forEach(function(char) {
         var btn = document.createElement('div');
         btn.className = 'filterbutton';
-        btn.textContent = char;
+        btn.textContent = originalGroupTitles[char] || char;
         btn.addEventListener('click', function(e) {
           e.preventDefault();
           e.stopPropagation();
@@ -197,7 +185,6 @@
         filterContainer.appendChild(btn);
       });
 
-      // "Alle"-Button erstellen
       var allBtn = document.createElement('div');
       allBtn.className = 'filterbutton selected';
       allBtn.textContent = 'Alle';
