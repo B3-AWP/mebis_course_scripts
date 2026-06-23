@@ -329,30 +329,53 @@
             color: white;
         }
 
-        /* Export von pdf knowledge-Base
-        @media print {
-        table {
-          break-inside: avoid;
-          page-break-inside: avoid;
-          width: 100%;
+        /* Export von pdf knowledge-Base */
+         /* === DRUCK-STYLING === */
+          @media print {
+            table {
+              break-inside: avoid;
+              page-break-inside: avoid;
+              width: 100%;
+            }
+            thead {
+              display: table-header-group;
+            }
+            tfoot {
+              display: table-footer-group;
+            }
+            tr {
+              break-inside: avoid;
+              page-break-inside: avoid;
+            }
+          }
+
+        /* === BUCH-NAVIGATION UNTEN FIXIEREN === */
+        #mod_book-chapter #mod_book-chaptersnavigation {
+            position: static !important;
+            top: auto !important;
+            bottom: auto !important;
+            width: auto !important;
+            margin: 16px 0 0 0 !important;
+            border-top: 1px solid var(--bs-border-color, #dee2e6);
         }
 
-        /* Thead auf jeder Seite wiederholen (bei großen Tabellen) */
-        thead {
-          display: table-header-group;
+         #mod_book-chaptersnavigation .btn-previous::after {
+            content: "Vorheriger Abschnitt";
+            margin-left: 6px;
+            font-size: 0.9em;
         }
 
-        /* Tfoot auf jeder Seite wiederholen */
-        tfoot {
-          display: table-footer-group;
+        #mod_book-chaptersnavigation .btn-next::before {
+            content: "Nächster Abschnitt";
+            margin-right: 6px;
+            font-size: 0.9em;
         }
 
-        /* Zeilenumbruch innerhalb einer Zeile verhindern */
-        tr {
-          break-inside: avoid;
-          page-break-inside: avoid;
+        #mod_book-chapter {
+            padding-bottom: 64px;
         }
-      }
+
+      
         `;
 
         // Style-Element erstellen und hinzufügen
@@ -410,6 +433,13 @@
       }
       copyNextButtonHref('myTargetLink');
 
+      // Buch-Navigation in Inhaltsbereich verschieben
+      const bookNav = document.getElementById(
+        'mod_book-chaptersnavigation');
+      const bookChapter = document.getElementById('mod_book-chapter');
+      if (bookNav && bookChapter) {
+        bookChapter.appendChild(bookNav);
+      }
 
     });
   </script>
