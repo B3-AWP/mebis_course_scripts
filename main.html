@@ -82,7 +82,7 @@
 
           /* Fix Scrolling to an anchor position */
           html {
-            scroll-padding-top: 140px; /* Höhe deines Headers + etwas Puffer */
+            scroll-padding-top: 140px;
           }
 
           /* === TAG/LABEL BASIS-STYLING === */
@@ -108,7 +108,6 @@
             position: relative;
           }
 
-          
           /* Label für optionale Items */
           label.itemoptional {
             color: #333333 !important;
@@ -324,13 +323,12 @@
             cursor: pointer;
           }
 
-        /* Button-Text in Weiß anzeigen */
+          /* Button-Text in Weiß anzeigen */
           a.btn-primary.btn-sm {
             color: white;
-        }
+          }
 
-        /* Export von pdf knowledge-Base */
-         /* === DRUCK-STYLING === */
+          /* === DRUCK-STYLING === */
           @media print {
             table {
               break-inside: avoid;
@@ -349,33 +347,58 @@
             }
           }
 
-        /* === BUCH-NAVIGATION UNTEN FIXIEREN === */
-        #mod_book-chapter #mod_book-chaptersnavigation {
-            position: static !important;
-            top: auto !important;
-            bottom: auto !important;
-            width: auto !important;
-            margin: 16px 0 0 0 !important;
-            border-top: 1px solid var(--bs-border-color, #dee2e6);
-        }
+          /* === BUCH-NAVIGATION: INLINE === */
 
-         #mod_book-chaptersnavigation .btn-previous::after {
-            content: "Vorheriger Abschnitt";
-            margin-left: 6px;
-            font-size: 0.9em;
-        }
+          #mod_book-chapter #mod_book-chaptersnavigation {
+              position: static !important;
+              top: auto !important;
+              bottom: auto !important;
+              width: auto !important;
+              margin: 16px 0 0 0 !important;
+              border-top: none !important;
+          }
 
-        #mod_book-chaptersnavigation .btn-next::before {
-            content: "Nächster Abschnitt";
-            margin-right: 6px;
-            font-size: 0.9em;
-        }
+          /* === BUCH-NAVIGATION: FIXED === */
 
-        #mod_book-chapter {
-            padding-bottom: 64px;
-        }
+          #mod_book-chapter #mod_book-chaptersnavigation.book-nav-fixed {
+              position: fixed !important;
+              bottom: 20px !important;
+              top: auto !important;
+              left: 0 !important;
+              right: 0 !important;
+              width: 100% !important;
+              margin: 0 !important;
+          }
 
-      
+          #mod_book-chaptersnavigation.book-nav-fixed .tertiary-navigation {
+              padding: 8px 16px !important;
+          }
+
+          #mod_book-chaptersnavigation.book-nav-fixed .d-flex {
+              align-items: center !important;
+              min-height: 44px !important;
+          }
+
+          #mod_book-chaptersnavigation.book-nav-fixed .btn {
+              display: inline-flex !important;
+              align-items: center !important;
+              padding: 6px 12px !important;
+              color: var(--bs-link-color, #d33f01) !important;
+          }
+
+          /* === BUCH-NAVIGATION BESCHRIFTUNG === */
+
+          #mod_book-chaptersnavigation .btn-previous::after {
+              content: "Vorheriger Abschnitt";
+              margin-left: 6px;
+              font-size: 0.9em;
+          }
+
+          #mod_book-chaptersnavigation .btn-next::before {
+              content: "Nächster Abschnitt";
+              margin-right: 6px;
+              font-size: 0.9em;
+          }
         `;
 
         // Style-Element erstellen und hinzufügen
@@ -433,12 +456,136 @@
       }
       copyNextButtonHref('myTargetLink');
 
-      // Buch-Navigation in Inhaltsbereich verschieben
-      const bookNav = document.getElementById(
-        'mod_book-chaptersnavigation');
+      // === BUCH-NAVIGATION: in Inhaltsbereich verschieben + sticky wenn außerhalb ===
+      const bookNav = document.getElementById('mod_book-chaptersnavigation');
       const bookChapter = document.getElementById('mod_book-chapter');
       if (bookNav && bookChapter) {
+        // Nav ans Ende des Kapitels hängen
         bookChapter.appendChild(bookNav);
+
+        // Sentinel-Platzhalter direkt vor der Nav einfügen
+        const sentinel = document.createElement('div');
+        sentinel.style.height = '1px';
+        bookChapter.insertBefore(sentinel, bookNav);
+
+        function updateNavPosition() {
+          const rect = sentinel.getBoundingClientRect();
+          const isVisible = rect.top < window.innerHeight && rect.bottom > 0;
+          if (isVisible) {
+            bookNav.classList.remove('book-nav-fixed');
+          } else {
+            bookNav.classList.add('book-nav-fixed');
+          }
+        }
+
+        // Sofort als fixed starten
+        bookNav.classList.add('book-nav-fixed');
+        // Initialprüfung nach kurzem Delay (DOM vollständig gerendert)
+        setTimeout(updateNavPosition, 100);
+        window.addEventListener('scroll', updateNavPosition, { passive: true });
+      }
+
+    });
+  </script>
+</p>
+<p>
+  <script>
+    /*
+  This script modifies the Moodle Book Table of Contents block.
+  It performs the following actions on DOM load:
+  1. Removes the 'text-truncate' class to show full chapter names.
+  2. Increases the width of the ToC block by 60%.
+  3. Scales down the font size for text and icons by a factor of 0.7.
+  4. Fixes list item vertical spacing by adjusting line height.
+  5. Fixes icon alignment and padding issues (especially for the trash icon).
+  6. Reduces the large margin between chapter titles and the action icons.
+
+  NOTE: This script only runs on screens with min-width: 768px
+*/
+    document.addEventListener("DOMContentLoaded", function() {
+      // Only execute on screens >= 768px
+      if (!window.matchMedia("(min-width: 768px)").matches) {
+        return;
+      }
+
+      // --- 1. Show full chapter names ---
+
+      const chapterLinks = document.querySelectorAll(
+        ".block_book_toc a.text-truncate");
+      chapterLinks.forEach(function(link) {
+        link.classList.remove("text-truncate");
+      });
+
+
+      // --- 2. Make the section 60% wider ---
+
+      const tocSection = document.querySelector(".block_book_toc");
+
+      if (tocSection) {
+        const currentWidth = tocSection.offsetWidth;
+        const newWidth = currentWidth * 1.6; // Use 1.6 for +60%
+        tocSection.style.width = newWidth + "px";
+      }
+
+
+      // --- 3. Decrease text font size by 30% (to 70%) ---
+
+      const contentArea = document.querySelector(
+        ".block_book_toc .card-text");
+
+      if (contentArea) {
+        const currentFontSize = window.getComputedStyle(contentArea)
+          .fontSize;
+        const currentSizeValue = parseFloat(currentFontSize);
+        const newTextSize = currentSizeValue * 0.7; // Use 0.7 factor
+
+        // Apply new font size
+        contentArea.style.fontSize = newTextSize + "px";
+
+        // --- 4. Fix vertical height of list items ---
+
+        contentArea.style.lineHeight = "1.2";
+
+
+        // --- 5. Handle icon downscaling (to 70%) ---
+
+        const icons = contentArea.querySelectorAll(".icon");
+        // Calculate the new icon size based on the *new text size*
+        const newIconSize = newTextSize * 0.7;
+
+        icons.forEach(function(icon) {
+          // Force all icons to the same calculated size
+          icon.style.fontSize = newIconSize + "px";
+        });
+
+
+        // --- 6. Fix trash can icon size and alignment ---
+
+        const actionLinks = contentArea.querySelectorAll(".action-list a");
+        actionLinks.forEach(function(link) {
+          link.style.verticalAlign = "middle";
+          link.style.padding = "0";
+          link.style.lineHeight = "1";
+          // Remove Bootstrap btn classes that cause alignment issues
+          link.classList.remove("btn", "btn-link");
+        });
+
+        const trashIconLinks = contentArea.querySelectorAll(
+          "a.action-icon.p-1");
+        trashIconLinks.forEach(function(link) {
+          link.classList.remove("p-1");
+        });
+
+        // --- 7. Reduce margin between title and icons ---
+
+        const actionLists = contentArea.querySelectorAll(
+          ".action-list.ms-auto");
+        actionLists.forEach(function(list) {
+          // Remove the class that pushes it all the way to the right
+          list.classList.remove("ms-auto");
+          // Add a smaller, fixed margin
+          list.classList.add("ms-2");
+        });
       }
 
     });
