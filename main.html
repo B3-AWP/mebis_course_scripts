@@ -364,9 +364,11 @@
               position: fixed !important;
               bottom: 20px !important;
               top: auto !important;
-              left: 0 !important;
-              right: 0 !important;
-              width: 100% !important;
+              left: 50% !important;
+              transform: translateX(-50%) !important;
+              max-width: 1200px !important;
+              width: calc(100% - 40px) !important;
+              z-index: 1050 !important;
               margin: 0 !important;
           }
 
@@ -388,16 +390,19 @@
 
           /* === BUCH-NAVIGATION BESCHRIFTUNG === */
 
-          #mod_book-chaptersnavigation .btn-previous::after {
-              content: "Vorheriger Abschnitt";
-              margin-left: 6px;
-              font-size: 0.9em;
-          }
+          /* Nur auf Tablets und Desktop anwenden */
+          @media (min-width: 768px) {
+              #mod_book-chaptersnavigation .btn-previous::after {
+                  content: "Vorheriger Abschnitt";
+                  margin-left: 6px;
+                  font-size: 0.9em;
+              }
 
-          #mod_book-chaptersnavigation .btn-next::before {
-              content: "Nächster Abschnitt";
-              margin-right: 6px;
-              font-size: 0.9em;
+              #mod_book-chaptersnavigation .btn-next::before {
+                  content: "Nächster Abschnitt";
+                  margin-right: 6px;
+                  font-size: 0.9em;
+              }
           }
         `;
 
