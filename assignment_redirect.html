@@ -1,0 +1,65 @@
+<!--
+  Assignment Redirect Script
+  Leitet nach dem Absenden eines Assignments direkt zur Course Section um,
+  statt das Assignment nochmal anzuzeigen.
+
+  Folgender Code soll in einen Textblock auf einem Mebiskurs eingefügt werden.
+-->
+<p style="margin: 0; padding: 0; height: 0;">
+  <script>
+    window.addEventListener('DOMContentLoaded', function() {
+
+      if (!window.location.href.includes('/mod/assign/view.php')) {
+        return;
+      }
+
+      var STORAGE_KEY = 'assign_section_redirect';
+
+      // Phase 2: Nach Moodles Server-Redirect zurück auf die Assign-Seite.
+      // Kein Submit-Button mehr sichtbar = Einreichung wurde akzeptiert.
+      // Kurze Verzögerung, damit AJAX-geladene Formulare Zeit haben zu rendern,
+      // bevor wir prüfen ob der Submit-Button fehlt.
+      var pendingUrl = sessionStorage.getItem(STORAGE_KEY);
+      if (pendingUrl) {
+        setTimeout(function() {
+          if (!document.getElementById('id_submitbutton')) {
+            sessionStorage.removeItem(STORAGE_KEY);
+            window.location.replace(pendingUrl);
+          } else {
+            // Formular ist doch noch da (z. B. Einreichung fehlgeschlagen) — aufräumen
+            sessionStorage.removeItem(STORAGE_KEY);
+          }
+        }, 300);
+        return;
+      }
+
+      // Phase 1: Submit-Button finden und Section-URL für nach dem Reload vormerken.
+      var submitButton = document.getElementById('id_submitbutton');
+      if (!submitButton) {
+        return;
+      }
+
+      var breadcrumbLinks = document.querySelectorAll('.breadcrumb .breadcrumb-item a');
+      if (breadcrumbLinks.length < 2) {
+        return;
+      }
+
+      var sectionUrl = breadcrumbLinks[1].href;
+      if (!sectionUrl || !sectionUrl.includes('/course/section.php')) {
+        return;
+      }
+
+      submitButton.addEventListener('click', function() {
+        sessionStorage.setItem(STORAGE_KEY, sectionUrl);
+      });
+
+      // Bei Abbrechen gespeicherte URL wieder löschen
+      var cancelButton = document.getElementById('id_cancel');
+      if (cancelButton) {
+        cancelButton.addEventListener('click', function() {
+          sessionStorage.removeItem(STORAGE_KEY);
+        });
+      }
+    });
+  </script>
+</p>
