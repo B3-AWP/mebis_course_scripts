@@ -53,6 +53,81 @@
         });
       });
 
+      // === PRÄFIXE AUS MODAL-ÜBERSCHRIFTEN ENTFERNEN ===
+
+      // Section-Überschriften in Modals: "HTML/CSS-2 HTML" → "2 HTML"
+      function removeSectionTitlePrefixes() {
+        const sectionTitles = document.querySelectorAll('.sectiontitle h2, .pagesechead h2, .section h2');
+        sectionTitles.forEach(function(h2) {
+          const text = h2.textContent.trim();
+          let cleaned = text;
+          
+          // Versuche Pattern "PREFIX-NUMMER REST" zu matchen
+          // Beispiel: "HTML/CSS-2 HTML" → Gruppen: PREFIX="HTML/CSS", NUMMER="2", REST="HTML"
+          const match = text.match(/^([\wÄÖÜäöüß\/]+)-(\d+)\s+(.+)$/);
+          if (match) {
+            // Behalte Nummer und Rest: "2 HTML"
+            cleaned = match[2] + ' ' + match[3];
+          } else {
+            // Fallback: Nutze die extrahierten Präfixe aus originalGroupTitles
+            Object.keys(originalGroupTitles).forEach(function(char) {
+              const prefix = originalGroupTitles[char];
+              if (text.startsWith(prefix)) {
+                // Entferne nur den Text-Präfix, behalte alles danach (inkl. Nummer)
+                cleaned = text.substring(prefix.length).replace(/^[-\/\s]+/, '').trim();
+              }
+            });
+          }
+          
+          if (cleaned && cleaned !== text) {
+            h2.textContent = cleaned;
+          }
+        });
+      }
+
+      // Activity-Titel nur in Grid-Layout: "1.2 Pflicht: Titel" → "Titel"
+      function removeActivityTitlePrefixes() {
+        const activityNames = document.querySelectorAll('#multi_section_tiles > li .activityname h5, #multi_section_tiles > li .activity h5');
+        activityNames.forEach(function(h5) {
+          const text = h5.textContent.trim();
+          // Entferne numerische Präfixe wie "1.2 Pflicht:" oder "2.3 Optional:"
+          const cleaned = text
+            .replace(/^\d+\.\d+\s+(Pflicht|Optional):\s*/i, '')
+            .replace(/^\d+\.\d+\s+/, '')
+            .trim();
+          if (cleaned && cleaned !== text) {
+            h5.textContent = cleaned;
+          }
+        });
+      }
+
+      // Initiales Entfernen beim Laden
+      removeSectionTitlePrefixes();
+      removeActivityTitlePrefixes();
+
+      // Überwache DOM-Änderungen für dynamisch geladene Modals
+      const modalObserver = new MutationObserver(function(mutations) {
+        let shouldUpdate = false;
+        mutations.forEach(function(mutation) {
+          if (mutation.addedNodes.length > 0) {
+            shouldUpdate = true;
+          }
+        });
+        if (shouldUpdate) {
+          removeSectionTitlePrefixes();
+          removeActivityTitlePrefixes();
+        }
+      });
+
+      // Beobachte das Haupt-Content-Element für neue Modals
+      const mainContent = document.querySelector('#page-content, #region-main, body');
+      if (mainContent) {
+        modalObserver.observe(mainContent, {
+          childList: true,
+          subtree: true
+        });
+      }
+
       // Bestehende Buttons entfernen
       filterContainer.querySelectorAll('.filterbutton').forEach(function(
         btn) {
