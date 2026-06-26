@@ -57,10 +57,10 @@
       function removeSectionTitlePrefixes() {
         const tilesContainer = document.getElementById('multi_section_tiles');
         if (!tilesContainer) return;
-        // Nur direkte li.tile Elemente durchsuchen, nicht verschachtelte ULs
-        const tiles = tilesContainer.querySelectorAll(':scope > li.tile');
-        tiles.forEach(function(tile) {
-          const h2 = tile.querySelector('.sectiontitle h2, .pagesechead h2, .section h2');
+        // Tiles UND Sections durchsuchen
+        const items = tilesContainer.querySelectorAll(':scope > li.tile, :scope > li.section');
+        items.forEach(function(item) {
+          const h2 = item.querySelector('.sectiontitle h2, .pagesechead h2, .section h2');
           if (!h2) return;
           const text = h2.textContent.trim();
           let cleaned = text;
