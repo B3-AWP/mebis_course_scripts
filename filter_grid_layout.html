@@ -55,8 +55,13 @@
       // === PRÄFIXE AUS MODAL-ÜBERSCHRIFTEN ENTFERNEN ===
 
       function removeSectionTitlePrefixes() {
-        const sectionTitles = document.querySelectorAll('.sectiontitle h2, .pagesechead h2, .section h2');
-        sectionTitles.forEach(function(h2) {
+        const tilesContainer = document.getElementById('multi_section_tiles');
+        if (!tilesContainer) return;
+        // Nur direkte li.tile Elemente durchsuchen, nicht verschachtelte ULs
+        const tiles = tilesContainer.querySelectorAll(':scope > li.tile');
+        tiles.forEach(function(tile) {
+          const h2 = tile.querySelector('.sectiontitle h2, .pagesechead h2, .section h2');
+          if (!h2) return;
           const text = h2.textContent.trim();
           let cleaned = text;
           const match = text.match(/^([\wÄÖÜäöüß\/]+)-(\d+)\s+(.+)$/);
@@ -77,8 +82,13 @@
       }
 
       function removeActivityTitlePrefixes() {
-        const activityNames = document.querySelectorAll('.activityname h5, .activity h5');
-        activityNames.forEach(function(h5) {
+        const tilesContainer = document.getElementById('multi_section_tiles');
+        if (!tilesContainer) return;
+        // Nur direkte li.subtile Elemente durchsuchen, nicht verschachtelte ULs
+        const subtiles = tilesContainer.querySelectorAll(':scope > li.subtile');
+        subtiles.forEach(function(li) {
+          const h5 = li.querySelector('.activityname h5, .activity h5');
+          if (!h5) return;
           const text = h5.textContent.trim();
           const cleaned = text
             .replace(/^\d+\.\d+\s+(Pflicht|Optional):\s*/i, '')
