@@ -387,8 +387,9 @@
           position: relative !important;
         }
 
-        /* cm-link wächst auf verfügbare Breite, kein Seitenverhältnis mehr */
-        li.subtile a.cm-link {
+        /* cm-link oder cm-inner wächst auf verfügbare Breite, kein Seitenverhältnis mehr */
+        li.subtile a.cm-link,
+        li.subtile div.cm-inner {
           flex: 1 !important;
           display: flex !important;
           flex-direction: row !important;
@@ -419,6 +420,7 @@
 
         /* Titel nimmt Restbreite – höhere Spezifität gegen Moodle-Override */
         li.subtile a.cm-link .activityname,
+        li.subtile div.cm-inner .activityname,
         li.subtile .activityname {
           position: static !important;
           flex: 1 !important;
@@ -433,6 +435,7 @@
           gap: 8px !important;
         }
         li.subtile a.cm-link .activityname h5,
+        li.subtile div.cm-inner .activityname h5,
         li.subtile .activityname h5 {
           font-size: 14px !important;
           margin: 0 !important;
