@@ -23,7 +23,6 @@
 
         if (!groups[firstChar]) {
           groups[firstChar] = [];
-          // Präfix aus Originaltitel extrahieren
           if (title.indexOf('-') !== -1) {
             originalGroupTitles[firstChar] = title.split('-')[0].trim();
           } else {
@@ -33,7 +32,7 @@
         groups[firstChar].push(tile);
       });
 
-      // Schritt 2: JETZT erst Präfix aus Anzeigenamen entfernen
+      // Schritt 2: Präfix aus Anzeigenamen entfernen
       Object.keys(groups).forEach(function(char) {
         groups[char].forEach(function(tile) {
           tile.setAttribute('data-group', char);
@@ -55,42 +54,32 @@
 
       // === PRÄFIXE AUS MODAL-ÜBERSCHRIFTEN ENTFERNEN ===
 
-      // Section-Überschriften in Modals: "HTML/CSS-2 HTML" → "2 HTML"
       function removeSectionTitlePrefixes() {
         const sectionTitles = document.querySelectorAll('.sectiontitle h2, .pagesechead h2, .section h2');
         sectionTitles.forEach(function(h2) {
           const text = h2.textContent.trim();
           let cleaned = text;
-          
-          // Versuche Pattern "PREFIX-NUMMER REST" zu matchen
-          // Beispiel: "HTML/CSS-2 HTML" → Gruppen: PREFIX="HTML/CSS", NUMMER="2", REST="HTML"
           const match = text.match(/^([\wÄÖÜäöüß\/]+)-(\d+)\s+(.+)$/);
           if (match) {
-            // Behalte Nummer und Rest: "2 HTML"
             cleaned = match[2] + ' ' + match[3];
           } else {
-            // Fallback: Nutze die extrahierten Präfixe aus originalGroupTitles
             Object.keys(originalGroupTitles).forEach(function(char) {
               const prefix = originalGroupTitles[char];
               if (text.startsWith(prefix)) {
-                // Entferne nur den Text-Präfix, behalte alles danach (inkl. Nummer)
                 cleaned = text.substring(prefix.length).replace(/^[-\/\s]+/, '').trim();
               }
             });
           }
-          
           if (cleaned && cleaned !== text) {
             h2.textContent = cleaned;
           }
         });
       }
 
-      // Activity-Titel nur in Grid-Layout: "1.2 Pflicht: Titel" → "Titel"
       function removeActivityTitlePrefixes() {
-        const activityNames = document.querySelectorAll('#multi_section_tiles > li .activityname h5, #multi_section_tiles > li .activity h5');
+        const activityNames = document.querySelectorAll('.activityname h5, .activity h5');
         activityNames.forEach(function(h5) {
           const text = h5.textContent.trim();
-          // Entferne numerische Präfixe wie "1.2 Pflicht:" oder "2.3 Optional:"
           const cleaned = text
             .replace(/^\d+\.\d+\s+(Pflicht|Optional):\s*/i, '')
             .replace(/^\d+\.\d+\s+/, '')
@@ -101,44 +90,193 @@
         });
       }
 
-      // Initiales Entfernen beim Laden
       removeSectionTitlePrefixes();
       removeActivityTitlePrefixes();
 
-      // Überwache DOM-Änderungen für dynamisch geladene Modals
-      const modalObserver = new MutationObserver(function(mutations) {
-        let shouldUpdate = false;
-        mutations.forEach(function(mutation) {
-          if (mutation.addedNodes.length > 0) {
-            shouldUpdate = true;
+      // === COMPLETION LABELS IN SUBTILES ===
+      function updateCompletionLabels() {
+        document.querySelectorAll('li.subtile .completioncheckbox').forEach(function(span) {
+          var existing = span.querySelector('.cl-label');
+          if (existing) existing.remove();
+          var li = span.closest('li.subtile');
+          var isManual = span.hasAttribute('data-action');
+          var state = isManual
+            ? span.getAttribute('data-complete')
+            : (li ? li.getAttribute('data-completion-state') : '0');
+          var label = document.createElement('span');
+          label.className = 'cl-label';
+          if (state === '1') {
+            label.textContent = 'Erledigt';
+            label.style.color = '#fff';
+          } else if (isManual) {
+            label.textContent = 'Als erledigt markieren';
+            label.style.color = '#6c757d';
+          } else {
+            label.textContent = 'Offen';
+            label.style.color = '#6c757d';
           }
-        });
-        if (shouldUpdate) {
-          removeSectionTitlePrefixes();
-          removeActivityTitlePrefixes();
-        }
-      });
-
-      // Beobachte das Haupt-Content-Element für neue Modals
-      const mainContent = document.querySelector('#page-content, #region-main, body');
-      if (mainContent) {
-        modalObserver.observe(mainContent, {
-          childList: true,
-          subtree: true
+          span.appendChild(label);
         });
       }
 
+      // === DYNAMISCHE PHASEN: STATUS, COUNTER, LEFT-BORDER ===
+
+      function findPhaseLabels() {
+        return Array.from(document.querySelectorAll(
+          'li.activity.fullwidth .label_content p'
+        )).filter(function(p) {
+          return /^Phase\s+\d/i.test(p.textContent.trim());
+        }).map(function(p) {
+          return p.closest('li.activity');
+        }).filter(Boolean);
+      }
+
+      function getSubtilesBetween(startLi, endLi) {
+        var result = [];
+        var el = startLi.nextElementSibling;
+        while (el && el !== endLi) {
+          if (el.classList.contains('subtile') && !el.classList.contains('spacer')) {
+            result.push(el);
+          }
+          el = el.nextElementSibling;
+        }
+        return result;
+      }
+
+      function calcStatus(subtiles) {
+        if (!subtiles.length) return { done: 0, total: 0, key: 'empty' };
+        var done = subtiles.filter(function(li) {
+          var btn = li.querySelector('button.completioncheckbox');
+          return li.getAttribute('data-completion-state') === '1'
+              || (btn && btn.getAttribute('data-complete') === '1');
+        }).length;
+        return {
+          done: done, total: subtiles.length,
+          key: done === subtiles.length ? 'done' : done > 0 ? 'active' : 'todo'
+        };
+      }
+
+      var PHASE_STYLE = {
+        done:  { bg: '#d1e7dd', bdr: '1px solid #a3cfbb',  color: '#0f5132', icon: 'fas fa-check'  },
+        active:{ bg: '#e9ecef', bdr: '1px solid #ced4da',  color: '#495057', icon: 'fas fa-pen'    },
+        todo:  { bg: '#f8f9fa', bdr: '1px solid #dee2e6',  color: '#adb5bd', icon: 'fas fa-circle' },
+        empty: { bg: '#f8f9fa', bdr: '1px dashed #dee2e6', color: '#ced4da', icon: ''              }
+      };
+
+      function updatePhaseDot(phaseLi, status) {
+        var dot = phaseLi.querySelector('.rounded-circle');
+        var p   = phaseLi.querySelector('p');
+        if (!dot || !p) return;
+        var s = PHASE_STYLE[status.key] || PHASE_STYLE.todo;
+
+        // Fix 2: Phasennummer aus Label-Text lesen → phasenspezifisches Icon
+        var phaseNum = parseInt((p.textContent.match(/Phase\s+(\d+)/i) || [])[1]) || 1;
+        var ACTIVE_ICONS = {
+          1: 'fas fa-pen',
+          2: 'fas fa-pen',
+          3: 'fas fa-clipboard-check',
+          4: 'fas fa-lock'
+        };
+        var iconClass = status.key === 'active'
+          ? (ACTIVE_ICONS[phaseNum] || 'fas fa-pen')
+          : s.icon;
+
+        dot.style.background = s.bg;
+        dot.style.border     = s.bdr;
+        dot.style.color      = s.color;
+
+        var icon = dot.querySelector('i');
+        if (!icon && iconClass) { icon = document.createElement('i'); dot.appendChild(icon); }
+        if (icon) {
+          icon.className = iconClass;
+          icon.style.fontSize = '12px';
+          icon.style.setProperty('color', s.color, 'important');
+          icon.style.opacity  = status.key === 'todo' ? '0.4' : '1';
+        }
+
+        // Fix 1: !important schlägt Moodle-Theme-Klasse .text-primary (#ef7430)
+        p.style.setProperty('color', s.color, 'important');
+      }
+
+      function updateProgressCounter(phaseLi, status) {
+        var p = phaseLi.querySelector('p');
+        if (!p) return;
+        var ctr = p.querySelector('.phase-counter');
+        if (!ctr) {
+          ctr = document.createElement('span');
+          ctr.className = 'phase-counter';
+          p.appendChild(ctr);
+        }
+        ctr.textContent = status.total > 0 ? status.done + '/' + status.total : '';
+        ctr.style.setProperty('color', (PHASE_STYLE[status.key] || PHASE_STYLE.todo).color, 'important');
+      }
+
+      function applyPhaseBorder(subtiles, status) {
+        subtiles.forEach(function(li) {
+          li.classList.remove('phase-done','phase-active','phase-todo','phase-empty');
+          li.classList.add('phase-' + status.key);
+        });
+      }
+
+      function updatePhases() {
+        var labels = findPhaseLabels();
+        labels.forEach(function(phaseLi, idx) {
+          // Fix 3: Abstand vor jeder Phase außer der ersten
+          phaseLi.style.marginTop = idx === 0 ? '' : '20px';
+
+          var next     = labels[idx + 1] || null;
+          var subtiles = getSubtilesBetween(phaseLi, next);
+          var status   = calcStatus(subtiles);
+          updatePhaseDot(phaseLi, status);
+          updateProgressCounter(phaseLi, status);
+          applyPhaseBorder(subtiles, status);
+        });
+      }
+
+      updateCompletionLabels();
+      updatePhases();
+
+      // Debounce-Guard verhindert Endlosschleife
+      var _updating = false;
+      function runUpdates() {
+        if (_updating) return;
+        _updating = true;
+        setTimeout(function() {
+          removeSectionTitlePrefixes();
+          removeActivityTitlePrefixes();
+          updateCompletionLabels();
+          updatePhases();
+          _updating = false;
+        }, 50);
+      }
+
+      const modalObserver = new MutationObserver(function(mutations) {
+        var relevant = mutations.some(function(m) {
+          return Array.from(m.addedNodes).some(function(n) {
+            if (n.nodeType !== 1) return false;
+            var cls = n.classList;
+            return !cls.contains('cl-label')
+                && !cls.contains('phase-counter')
+                && !(n.tagName === 'I' && n.closest && n.closest('.rounded-circle'));
+          });
+        });
+        if (relevant) runUpdates();
+      });
+
+      const mainContent = document.querySelector('#page-content, #region-main, body');
+      if (mainContent) {
+        modalObserver.observe(mainContent, { childList: true, subtree: true });
+      }
+
       // Bestehende Buttons entfernen
-      filterContainer.querySelectorAll('.filterbutton').forEach(function(
-        btn) {
+      filterContainer.querySelectorAll('.filterbutton').forEach(function(btn) {
         btn.remove();
       });
       var filterIntro = document.getElementById('filterintro');
       if (filterIntro) filterIntro.remove();
 
       const sortedKeys = Object.keys(groups).sort(function(a, b) {
-        const aNum = !isNaN(a),
-          bNum = !isNaN(b);
+        const aNum = !isNaN(a), bNum = !isNaN(b);
         if (aNum && !bNum) return -1;
         if (!aNum && bNum) return 1;
         if (aNum && bNum) return parseInt(a) - parseInt(b);
@@ -147,6 +285,8 @@
 
       var headerCSS = document.createElement('style');
       headerCSS.textContent = `
+
+        /* ── Gruppenheader ── */
         li.tile-group-header {
           width: 100% !important;
           flex-basis: 100% !important;
@@ -171,19 +311,217 @@
           border-bottom: 3px solid #ef7430;
           display: inline-block;
         }
+
+        /* ── Filter-Buttons ── */
         .filterbutton { color: inherit; }
         .filterbutton.selected {
           background: #0f6cbf !important;
           color: #fff !important;
           border-color: #0f6cbf !important;
         }
+
+        /* ── Seitenbreite ── */
         body.format-tiles.limitedwidth:not(.path-mod) #page.drawers .main-inner {
           width: 1280px !important;
+        }
+
+        /* ── Subtiles: Quadrat → Länglich ── */
+
+        /* li selbst wird Flex-Container → cm-link + completioncheckbox nebeneinander */
+        li.subtile {
+          width: 100% !important;
+          max-width: 100% !important;
+          flex-basis: 100% !important;
+          height: auto !important;
+          min-height: 0 !important;
+          display: flex !important;
+          flex-direction: row !important;
+          align-items: stretch !important;
+          position: relative !important;
+        }
+
+        /* cm-link wächst auf verfügbare Breite, kein Seitenverhältnis mehr */
+        li.subtile a.cm-link {
+          flex: 1 !important;
+          display: flex !important;
+          flex-direction: row !important;
+          align-items: center !important;
+          height: auto !important;
+          min-height: 52px !important;
+          max-height: none !important;
+          padding: 8px 12px !important;
+          aspect-ratio: unset !important;
+          width: auto !important;
+        }
+
+        /* Hintergrundbild weg */
+        li.subtile .photo-overlay {
+          display: none !important;
+        }
+
+        /* Icon-Container: aus absolutem in statisches Flow-Element */
+        li.subtile .tileiconcontainer {
+          position: static !important;
+          width: 36px !important;
+          height: 36px !important;
+          min-width: 36px !important;
+          flex-shrink: 0 !important;
+          margin: 0 !important;
+          padding: 0 !important;
+        }
+
+        /* Titel nimmt Restbreite – höhere Spezifität gegen Moodle-Override */
+        li.subtile a.cm-link .activityname,
+        li.subtile .activityname {
+          position: static !important;
+          flex: 1 !important;
+          padding: 0 0 0 10px !important;
+          text-align: left !important;
+          bottom: unset !important;
+          left: unset !important;
+          width: auto !important;
+          display: block !important;
+        }
+        li.subtile a.cm-link .activityname h5,
+        li.subtile .activityname h5 {
+          font-size: 14px !important;
+          margin: 0 !important;
+          white-space: normal !important;
+          text-align: left !important;
+          color: inherit !important;
+        }
+
+        /* Completion-Bereich: statisch, flex-row, feste Breite rechts */
+        li.subtile .completioncheckbox {
+          position: static !important;
+          top: unset !important;
+          right: unset !important;
+          display: flex !important;
+          flex-direction: row !important;
+          align-items: center !important;
+          justify-content: center !important;
+          gap: 4px !important;
+          flex-shrink: 0 !important;
+          min-width: 78px !important;
+          margin: 0 8px 0 4px !important;
+          padding: 3px 10px !important;
+          border-radius: 20px !important;
+          font-size: 11px !important;
+          font-weight: 500 !important;
+          white-space: nowrap !important;
+          /* Kursfarbe des Themes komplett zurücksetzen */
+          background: transparent !important;
+          background-color: transparent !important;
+          background-image: none !important;
+          border: 1.5px solid #dee2e6 !important;
+        }
+
+        /* Haken-Icon immer sichtbar */
+        li.subtile .completioncheckbox .fa-check {
+          visibility: visible !important;
+          opacity: 1 !important;
+          font-size: 12px !important;
+        }
+
+        /* ── Fix 3: Spacer-LIs ausblenden ── */
+        li.subtile.spacer {
+          display: none !important;
+        }
+
+        /* Nicht erledigt – grau, passiv (auto-completion) */
+        li.subtile[data-completion-state="0"] .completioncheckbox {
+          background-color: #f8f9fa !important;
+          border-color: #dee2e6 !important;
+          color: #6c757d !important;
+        }
+        li.subtile[data-completion-state="0"] .completioncheckbox .fa-check {
+          color: #dee2e6 !important;
+        }
+
+        /* ── Fix 1: Erledigt – sattes Grün mit weißem Text ── */
+        li.subtile[data-completion-state="1"] .completioncheckbox {
+          background-color: #198754 !important;
+          border-color: #146c43 !important;
+          color: #fff !important;
+        }
+        li.subtile[data-completion-state="1"] .completioncheckbox .fa-check {
+          color: #fff !important;
+          visibility: visible !important;
+        }
+
+        /* ── Fix 2: Manueller Button – klickbar erkennbar machen ── */
+        li.subtile button.completioncheckbox[data-action="tiles-toggle-manual-completion-subtile"] {
+          cursor: pointer !important;
+          border-style: dashed !important;
+          border-color: #adb5bd !important;
+          background-color: #fff !important;
+          transition: background-color 0.15s, border-color 0.15s !important;
+        }
+        li.subtile button.completioncheckbox[data-action="tiles-toggle-manual-completion-subtile"]:hover {
+          background-color: #e9ecef !important;
+          border-color: #6c757d !important;
+          color: #495057 !important;
+        }
+        li.subtile button.completioncheckbox[data-complete="1"] {
+          background-color: #198754 !important;
+          border-color: #146c43 !important;
+          border-style: solid !important;
+          color: #fff !important;
+        }
+        li.subtile button.completioncheckbox[data-complete="1"] .fa-check {
+          color: #fff !important;
+        }
+
+        /* Label-Span der via JS eingefügt wird */
+        li.subtile .completioncheckbox .cl-label {
+          font-size: 11px !important;
+          font-weight: 500 !important;
+          color: inherit !important;
+        }
+
+        /* Leeres div nach dem Link entfernt */
+        li.subtile .contentafterlink {
+          display: none !important;
+        }
+
+        /* ── Dynamische Phasen: Progress-Counter & Left-Border ── */
+        .phase-counter {
+          font-size: 10px;
+          font-weight: 400;
+          margin-left: 6px;
+          opacity: 0.75;
+        }
+
+        /* Nur Erledigt hebt sich farblich ab – alles andere neutral */
+        li.subtile.phase-done   { border-left: 3px solid #198754 !important; }
+        li.subtile.phase-active { border-left: 3px solid #ced4da !important; }
+        li.subtile.phase-todo   { border-left: 3px solid #ced4da !important; }
+        li.subtile.phase-empty  { border-left: 3px solid #ced4da !important; }
+
+        /* ── Icon-Container: Moodle-Farben neutralisieren ── */
+        li.subtile .activityiconcontainer {
+          background: transparent !important;
+          border: none !important;
+          box-shadow: none !important;
+        }
+        li.subtile .tile-icon img.icon {
+          filter: saturate(0.45) brightness(0.95) !important;
+        }
+
+        /* ── Responsive: Completion-Label bei schmalen Viewports ── */
+        @media (max-width: 540px) {
+          li.subtile .completioncheckbox {
+            min-width: 38px !important;
+            padding: 3px 8px !important;
+          }
+          li.subtile .completioncheckbox .cl-label {
+            display: none !important;
+          }
         }
       `;
       document.head.appendChild(headerCSS);
 
-      // Gruppenheader einfügen — nur bei Gruppen mit mehr als 1 Tile
+      // Gruppenheader einfügen
       var headerElements = [];
       sortedKeys.forEach(function(char) {
         var tiles = groups[char];
@@ -210,43 +548,33 @@
       });
 
       function getCourseIndexSections() {
-        return document.querySelectorAll(
-          '.courseindex-section[data-number]');
+        return document.querySelectorAll('.courseindex-section[data-number]');
       }
 
       // Filter-Logik
       function filterByChar(char) {
         getTiles().forEach(function(tile) {
-          if (char === 'all') {
-            tile.style.display = '';
-            return;
-          }
-          tile.style.display =
-            (tile.getAttribute('data-group') === char) ? '' : 'none';
+          if (char === 'all') { tile.style.display = ''; return; }
+          tile.style.display = (tile.getAttribute('data-group') === char) ? '' : 'none';
         });
         headerElements.forEach(function(header) {
           header.style.display = (char === 'all') ? '' : 'none';
         });
         getCourseIndexSections().forEach(function(section) {
           var num = section.getAttribute('data-number');
-          if (char === 'all') {
-            section.style.display = '';
-            return;
-          }
-          section.style.display =
-            (sectionToGroup[num] === char) ? '' : 'none';
+          if (char === 'all') { section.style.display = ''; return; }
+          section.style.display = (sectionToGroup[num] === char) ? '' : 'none';
         });
       }
 
       function setActive(activeBtn) {
-        filterContainer.querySelectorAll('.filterbutton').forEach(function(
-          b) {
+        filterContainer.querySelectorAll('.filterbutton').forEach(function(b) {
           b.classList.remove('selected');
         });
         activeBtn.classList.add('selected');
       }
 
-      // Filter-Buttons mit Klartextnamen
+      // Filter-Buttons
       sortedKeys.forEach(function(char) {
         var btn = document.createElement('div');
         btn.className = 'filterbutton';
