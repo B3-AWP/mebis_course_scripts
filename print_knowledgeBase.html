@@ -1,0 +1,81 @@
+<!-- 
+ Folgender Code soll im ersten Abschnitt einer KnowledgeBase-Seite eingefügt werden, um die Darstellung von optionalen Items, Pflicht-Items und Überschriften zu verbessern.
+-->
+<p style="margin: 0; padding: 0; height: 0;">
+  <script>
+    window.addEventListener('load', function() {
+      // CSS-Styling für Tabellen beim Drucken
+      function applyPrintStyles() {
+        const printTableCSS = `
+          /* === SEITENUMBRÜCHE OPTIMIEREN === */
+          
+          /* Überschriften nicht vom nachfolgenden Inhalt trennen */
+          h1, h2, h3, h4, h5, h6 {
+            break-after: avoid !important;
+            page-break-after: avoid !important;
+            break-inside: avoid !important;
+            page-break-inside: avoid !important;
+          }
+          
+          /* Listen zusammenhalten */
+          ul, ol {
+            break-inside: avoid !important;
+            page-break-inside: avoid !important;
+          }
+          
+          /* Verwaiste und Witwen-Zeilen vermeiden */
+          p, li {
+            orphans: 3 !important;
+            widows: 3 !important;
+          }
+          
+          /* Bilder und Figures nicht aufteilen */
+          img, figure {
+            break-inside: avoid !important;
+            page-break-inside: avoid !important;
+          }
+          
+          /* Blockquotes zusammenhalten */
+          blockquote {
+            break-inside: avoid !important;
+            page-break-inside: avoid !important;
+          }
+          
+          /* Code-Blöcke zusammenhalten */
+          pre, code {
+            break-inside: avoid !important;
+            page-break-inside: avoid !important;
+          }
+          
+          /* Divs mit bestimmten Klassen zusammenhalten */
+          div.card, div.box, div.panel {
+            break-inside: avoid !important;
+            page-break-inside: avoid !important;
+          }
+
+          /* === TABELLEN === */
+            width: 100% !important;
+          }
+          thead {
+            display: table-header-group !important;
+          }
+          tfoot {
+            display: table-footer-group !important;
+          }
+          tr {
+            break-inside: avoid !important;
+            page-break-inside: avoid !important;
+          }
+        `;
+
+        // Style-Element erstellen und hinzufügen
+        const styleSheet = document.createElement('style');
+        styleSheet.textContent = printTableCSS;
+        document.head.appendChild(styleSheet);
+      }
+
+      // Styles anwenden
+      applyPrintStyles();
+    });
+  </script>
+</p>
