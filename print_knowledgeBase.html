@@ -52,8 +52,17 @@
             break-inside: avoid !important;
             page-break-inside: avoid !important;
           }
+          
+          /* Book Chapter auf neuer Seite beginnen */
+          div.book_chapter {
+            break-before: page !important;
+            page-break-before: always !important;
+          }
 
           /* === TABELLEN === */
+          table {
+            break-inside: avoid !important;
+            page-break-inside: avoid !important;
             width: 100% !important;
           }
           thead {
