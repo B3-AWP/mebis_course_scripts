@@ -330,7 +330,7 @@
 
           /* === BUCH-NAVIGATION: INLINE === */
 
-          #mod_book-chapter #mod_book-chaptersnavigation {
+          #mod_book-chapter #mod_book-chaptersnavigation:not(.book-nav-fixed) {
               position: static !important;
               top: auto !important;
               bottom: auto !important;
@@ -339,8 +339,17 @@
               border-top: none !important;
           }
 
+          #mod_book-chapter #mod_book-chaptersnavigation .d-flex {
+              display: flex !important;
+              justify-content: space-between !important;
+          }
+
+          #mod_book-chapter #mod_book-chaptersnavigation .navitem:last-child {
+              margin-left: auto !important;
+          }
+
           /* === BUCH-NAVIGATION: FIXED === */
-          /* left und width werden per JS an #region-main angeglichen */
+          /* left und width werden per JS an .main-inner angeglichen */
           #mod_book-chapter #mod_book-chaptersnavigation.book-nav-fixed {
               position: fixed !important;
               bottom: 20px !important;
@@ -419,6 +428,17 @@
         sentinel.style.height = '1px';
         bookChapter.insertBefore(sentinel, bookNav);
 
+        const mainInner = document.getElementById('topofscroll');
+
+        function updateNavWidth() {
+          if (!mainInner) {
+            return;
+          }
+          const rect = mainInner.getBoundingClientRect();
+          bookNav.style.left = rect.left + 'px';
+          bookNav.style.width = rect.width + 'px';
+        }
+
         function updateNavPosition() {
           const rect = sentinel.getBoundingClientRect();
           const isVisible = rect.top < window.innerHeight && rect.bottom > 0;
@@ -426,14 +446,17 @@
             bookNav.classList.remove('book-nav-fixed');
           } else {
             bookNav.classList.add('book-nav-fixed');
+            updateNavWidth();
           }
         }
 
         // Sofort als fixed starten
         bookNav.classList.add('book-nav-fixed');
+        updateNavWidth();
         // Initialprüfung nach kurzem Delay (DOM vollständig gerendert)
         setTimeout(updateNavPosition, 100);
         window.addEventListener('scroll', updateNavPosition, { passive: true });
+        window.addEventListener('resize', updateNavWidth, { passive: true });
       }
 
     });
