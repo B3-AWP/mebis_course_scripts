@@ -340,26 +340,37 @@
           }
 
           /* === BUCH-NAVIGATION: FIXED === */
-
+          /* left und width werden per JS an #region-main angeglichen */
           #mod_book-chapter #mod_book-chaptersnavigation.book-nav-fixed {
               position: fixed !important;
               bottom: 20px !important;
               top: auto !important;
-              left: 50% !important;
-              transform: translateX(-50%) !important;
-              max-width: 1200px !important;
-              width: calc(100% - 40px) !important;
+              transform: none !important;
               z-index: 1050 !important;
               margin: 0 !important;
           }
 
           #mod_book-chaptersnavigation.book-nav-fixed .tertiary-navigation {
               padding: 8px 16px !important;
+              max-width: none !important;
+              width: 100% !important;
+              margin: 0 !important;
           }
 
           #mod_book-chaptersnavigation.book-nav-fixed .d-flex {
+              display: flex !important;
               align-items: center !important;
+              justify-content: space-between !important;
               min-height: 44px !important;
+              width: 100% !important;
+          }
+
+          #mod_book-chaptersnavigation.book-nav-fixed .navitem {
+              margin: 0 !important;
+          }
+
+          #mod_book-chaptersnavigation.book-nav-fixed .navitem:last-child {
+              margin-left: auto !important;
           }
 
           #mod_book-chaptersnavigation.book-nav-fixed .btn {
