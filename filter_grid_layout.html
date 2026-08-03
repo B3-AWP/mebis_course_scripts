@@ -3,51 +3,74 @@
     window.addEventListener('load', function() {
 
       const tilesContainer = document.getElementById('multi_section_tiles');
-      const filterContainer = document.getElementById('filterbuttons');
-      if (!tilesContainer || !filterContainer) return;
+      if (!tilesContainer) return;
+
+      // Moodle Tiles rendert #filterbuttons nur, wenn es in den Sectionnamen
+      // selbst ein Filterschema erkennt (z.B. "Präfix-1"). Bei Titeln ohne
+      // Nummer fehlt der Container - dann legen wir ihn selbst an, damit das
+      // Skript nicht komplett aussteigt.
+      let filterContainer = document.getElementById('filterbuttons');
+      if (!filterContainer) {
+        filterContainer = document.createElement('div');
+        filterContainer.id = 'filterbuttons';
+        filterContainer.className = 'filterbuttons';
+        tilesContainer.parentNode.insertBefore(filterContainer, tilesContainer);
+      }
 
       function getTiles() {
         return tilesContainer.querySelectorAll('li.tile[data-section]');
       }
 
-      // Schritt 1: Gruppen UND Originaltitel in EINEM Durchlauf erfassen
+      // Präfix-Muster: "Wort-1 Titel", "Wort- Titel" und "Wort-Titel".
+      // Die Nummer nach dem Bindestrich ist optional, damit auch Titel ohne
+      // Nummerierung (z.B. "Allgemein- Informationen") erkannt werden.
+      const PREFIX_RE = /^([\wÄÖÜäöüß\/]+)-\s*(\d+)?\s*(.*)$/;
+
+      // Zerlegt einen Titel in Präfix und Rest. Gibt null zurück,
+      // wenn kein Präfix vorhanden ist.
+      function splitTitle(title) {
+        const match = title.trim().match(PREFIX_RE);
+        if (!match) return null;
+        const rest = (match[2] ? match[2] + ' ' : '') + match[3].trim();
+        return { prefix: match[1], rest: rest.trim() };
+      }
+
+      // Schritt 1: Kacheln nach Präfix gruppieren.
+      // Der Gruppenschlüssel ist zugleich die Beschriftung von Filter-Button
+      // und Gruppenheader.
       const groups = {};
-      const originalGroupTitles = {};
 
       getTiles().forEach(function(tile) {
         const h3 = tile.querySelector('h3');
         if (!h3) return;
         const title = h3.textContent.trim();
         if (!title) return;
-        const firstChar = title.charAt(0).toUpperCase();
 
-        if (!groups[firstChar]) {
-          groups[firstChar] = [];
-          if (title.indexOf('-') !== -1) {
-            originalGroupTitles[firstChar] = title.split('-')[0].trim();
-          } else {
-            originalGroupTitles[firstChar] = title.split(' ')[0].trim();
-          }
+        // Gruppiert wird nach dem vollständigen Präfix, nicht nach dem ersten
+        // Buchstaben. Sonst landen Titel mit gleichem Anfangsbuchstaben aber
+        // unterschiedlichem Präfix in derselben Gruppe (z.B. "Inhalte- ..."
+        // und "Interne Inhalte"). Titel ohne Präfix bilden eine eigene Gruppe
+        // unter ihrem vollen Namen.
+        const parts = splitTitle(title);
+        const key = parts ? parts.prefix : title;
+
+        if (!groups[key]) {
+          groups[key] = [];
         }
-        groups[firstChar].push(tile);
+        groups[key].push(tile);
       });
 
       // Schritt 2: Präfix aus Anzeigenamen entfernen
-      Object.keys(groups).forEach(function(char) {
-        groups[char].forEach(function(tile) {
-          tile.setAttribute('data-group', char);
+      Object.keys(groups).forEach(function(key) {
+        groups[key].forEach(function(tile) {
+          tile.setAttribute('data-group', key);
           var h3 = tile.querySelector('h3');
           if (!h3) return;
           var title = h3.textContent.trim();
-          var numbered = title.replace(/^[\wÄÖÜäöüß]+-(\d+)\s*/, '$1 ').trim();
-          if (numbered !== title) {
-            h3.textContent = numbered || 'Übersicht';
-          } else {
-            var prefix = originalGroupTitles[char] || '';
-            var rest = prefix && title.startsWith(prefix)
-              ? title.substring(prefix.length).replace(/^[-\s]+/, '').trim()
-              : title;
-            h3.textContent = rest || title;
+          var parts = splitTitle(title);
+          // Titel ohne Präfix bleiben unverändert stehen.
+          if (parts) {
+            h3.textContent = parts.rest || title;
           }
         });
       });
@@ -63,20 +86,9 @@
           const h2 = item.querySelector('.sectiontitle h2, .pagesechead h2, .section h2');
           if (!h2) return;
           const text = h2.textContent.trim();
-          let cleaned = text;
-          const match = text.match(/^([\wÄÖÜäöüß\/]+)-(\d+)\s+(.+)$/);
-          if (match) {
-            cleaned = match[2] + ' ' + match[3];
-          } else {
-            Object.keys(originalGroupTitles).forEach(function(char) {
-              const prefix = originalGroupTitles[char];
-              if (text.startsWith(prefix)) {
-                cleaned = text.substring(prefix.length).replace(/^[-\/\s]+/, '').trim();
-              }
-            });
-          }
-          if (cleaned && cleaned !== text) {
-            h2.textContent = cleaned;
+          const parts = splitTitle(text);
+          if (parts && parts.rest && parts.rest !== text) {
+            h2.textContent = parts.rest;
           }
         });
       }
@@ -360,6 +372,28 @@
         }
 
         /* ── Filter-Buttons ── */
+        /* Fallback-Styling, falls #filterbuttons per JS erzeugt wurde und
+           damit die Moodle-Klassen des Originalcontainers fehlen. */
+        #filterbuttons {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 8px;
+          margin: 0 0 16px 0;
+        }
+        #filterbuttons .filterbutton {
+          padding: 4px 14px;
+          border: 1px solid #ced4da;
+          border-radius: 20px;
+          background: #fff;
+          cursor: pointer;
+          font-size: 0.9em;
+          user-select: none;
+          transition: background-color 0.15s, border-color 0.15s;
+        }
+        #filterbuttons .filterbutton:hover {
+          background: #e9ecef;
+          border-color: #adb5bd;
+        }
         .filterbutton { color: inherit; }
         .filterbutton.selected {
           background: #0f6cbf !important;
@@ -596,15 +630,15 @@
 
       // Gruppenheader einfügen
       var headerElements = [];
-      sortedKeys.forEach(function(char) {
-        var tiles = groups[char];
+      sortedKeys.forEach(function(key) {
+        var tiles = groups[key];
         if (tiles.length < 1) return;
 
         var header = document.createElement('li');
         header.className = 'tile-group-header';
-        header.setAttribute('data-group', char);
+        header.setAttribute('data-group', key);
         var h3 = document.createElement('h3');
-        h3.textContent = originalGroupTitles[char] || char;
+        h3.textContent = key;
         header.appendChild(h3);
 
         tiles[0].parentNode.insertBefore(header, tiles[0]);
@@ -613,10 +647,10 @@
 
       // Kursindex-Zuordnung
       var sectionToGroup = {};
-      Object.keys(groups).forEach(function(char) {
-        groups[char].forEach(function(tile) {
+      Object.keys(groups).forEach(function(key) {
+        groups[key].forEach(function(tile) {
           var sec = tile.getAttribute('data-section');
-          if (sec) sectionToGroup[sec] = char;
+          if (sec) sectionToGroup[sec] = key;
         });
       });
 
@@ -625,18 +659,18 @@
       }
 
       // Filter-Logik
-      function filterByChar(char) {
+      function filterByGroup(key) {
         getTiles().forEach(function(tile) {
-          if (char === 'all') { tile.style.display = ''; return; }
-          tile.style.display = (tile.getAttribute('data-group') === char) ? '' : 'none';
+          if (key === 'all') { tile.style.display = ''; return; }
+          tile.style.display = (tile.getAttribute('data-group') === key) ? '' : 'none';
         });
         headerElements.forEach(function(header) {
-          header.style.display = (char === 'all') ? '' : 'none';
+          header.style.display = (key === 'all') ? '' : 'none';
         });
         getCourseIndexSections().forEach(function(section) {
           var num = section.getAttribute('data-number');
-          if (char === 'all') { section.style.display = ''; return; }
-          section.style.display = (sectionToGroup[num] === char) ? '' : 'none';
+          if (key === 'all') { section.style.display = ''; return; }
+          section.style.display = (sectionToGroup[num] === key) ? '' : 'none';
         });
       }
 
@@ -648,15 +682,15 @@
       }
 
       // Filter-Buttons
-      sortedKeys.forEach(function(char) {
+      sortedKeys.forEach(function(key) {
         var btn = document.createElement('div');
         btn.className = 'filterbutton';
-        btn.textContent = originalGroupTitles[char] || char;
+        btn.textContent = key;
         btn.addEventListener('click', function(e) {
           e.preventDefault();
           e.stopPropagation();
           setActive(btn);
-          filterByChar(char);
+          filterByGroup(key);
         });
         filterContainer.appendChild(btn);
       });
@@ -668,7 +702,7 @@
         e.preventDefault();
         e.stopPropagation();
         setActive(allBtn);
-        filterByChar('all');
+        filterByGroup('all');
       });
       filterContainer.appendChild(allBtn);
 

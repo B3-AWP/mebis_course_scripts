@@ -25,16 +25,32 @@ For courses with **OneTopic format** (tab-based). Insert into a text block.
 ### filter_grid_layout.html
 For courses with **Tiles format** (grid/kachel layout). Insert into a text block.
 
+**Section naming scheme**
+
+Tiles are grouped by the prefix in their section name — the part before the
+first hyphen. The number after the hyphen is optional:
+
+| Section name | Group | Tile shows |
+|---|---|---|
+| `Organisation- Feedback` | Organisation | Feedback |
+| `Organisation-2 Noten` | Organisation | 2 Noten |
+| `Inhalte- Knowledge Base` | Inhalte | Knowledge Base |
+| `Interne Inhalte` | Interne Inhalte | Interne Inhalte |
+
+Sections without a hyphen form their own group under their full name.
+
 **Filter & Navigation**
-- Dynamic filter buttons generated from first character of each tile title (e.g. `1`, `2`, `3`, `P`)
-- Button sorting: numbers first (ascending), then letters (alphabetical)
+- Dynamic filter buttons generated from the prefix of each tile title (e.g. `Organisation`, `Inhalte`)
+- Grouping uses the full prefix, not just its first letter — `Inhalte- Kursinhalte` and `Interne Inhalte` stay in separate groups
+- Button sorting: numeric prefixes first (ascending), then alphabetical
 - "Alle" button to show all tiles
-- Group headers inserted between tile groups in "Alle" view (e.g. "1 FRONTEND", "2 PHP")
+- Group headers inserted between tile groups in "Alle" view (e.g. "ORGANISATION")
 - Course index (left sidebar navigation) filtered in sync with tile filter
 - Old Moodle filter buttons and filter icon removed
+- `#filterbuttons` container created by the script if Moodle does not render it — Moodle Tiles only emits it when it detects a numbered scheme in the section names, so without this the whole script would abort
 
 **Title & Prefix Cleanup**
-- Prefix removed from tile titles (h3): `PREFIX-1 Title` → `1 Title`
+- Prefix removed from tile titles (h3): `PREFIX-1 Title` → `1 Title`, `PREFIX- Title` → `Title`
 - Prefix removed from modal/section headings (h2)
 - Prefix removed from activity titles in subtiles (h5): `1.2 Pflicht: Title` → `Title`
 
