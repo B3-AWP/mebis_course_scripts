@@ -324,6 +324,17 @@
             color: white;
           }
 
+          /* === BUCH-NAVIGATION: Theme-Vorgaben deaktivieren === */
+          /* Segel-Theme verschiebt .btn-previous/.btn-next per translateY(100px) */
+          /* (Scroll-Reveal-Animation) und zwingt sie auf eine feste Breite von */
+          /* 48px (für die reine Pfeil-Icon-Darstellung) - beides passt nicht */
+          /* mehr, seit wir zusätzlich einen Beschriftungstext anzeigen. */
+          .path-mod-book .btn-previous,
+          .path-mod-book .btn-next {
+              transform: none !important;
+              width: auto !important;
+          }
+
           /* === BUCH-NAVIGATION: INLINE === */
 
           #mod_book-chapter #mod_book-chaptersnavigation:not(.book-nav-fixed) {
@@ -383,12 +394,22 @@
               align-items: center !important;
               padding: 6px 12px !important;
               color: var(--bs-link-color, #d33f01) !important;
+              white-space: nowrap !important;
+              flex-shrink: 0 !important;
           }
 
           /* === BUCH-NAVIGATION BESCHRIFTUNG === */
 
           /* Nur auf Tablets und Desktop anwenden */
           @media (min-width: 768px) {
+              #mod_book-chaptersnavigation .btn-previous,
+              #mod_book-chaptersnavigation .btn-next {
+                  display: inline-flex !important;
+                  flex-direction: row !important;
+                  align-items: center !important;
+                  white-space: nowrap !important;
+              }
+
               #mod_book-chaptersnavigation .btn-previous::after {
                   content: "Vorheriger Abschnitt";
                   margin-left: 6px;
