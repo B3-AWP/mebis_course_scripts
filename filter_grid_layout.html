@@ -162,8 +162,14 @@
             : (li ? li.getAttribute('data-completion-state') : '0');
           var label = document.createElement('span');
           label.className = 'cl-label';
-          if (state === '1') {
+          // Moodle-Completion-States: 1 = erledigt, 2 = erledigt (bestanden),
+          // 3 = erledigt (nicht bestanden). Quizze mit Bestehensgrenze liefern
+          // 2 bzw. 3 - beide zaehlen als abgeschlossen.
+          if (state === '1' || state === '2') {
             label.textContent = 'Erledigt';
+            label.style.color = '#fff';
+          } else if (state === '3') {
+            label.textContent = 'Nicht bestanden';
             label.style.color = '#fff';
           } else if (isManual) {
             label.textContent = 'Als erledigt markieren';
@@ -204,7 +210,10 @@
         if (!subtiles.length) return { done: 0, total: 0, key: 'empty' };
         var done = subtiles.filter(function(li) {
           var btn = li.querySelector('button.completioncheckbox');
-          return li.getAttribute('data-completion-state') === '1'
+          // 1 = erledigt, 2 = bestanden, 3 = nicht bestanden. Alle drei sind
+          // abgeschlossen und zaehlen fuer den Phasen-Fortschritt.
+          var state = li.getAttribute('data-completion-state');
+          return state === '1' || state === '2' || state === '3'
               || (btn && btn.getAttribute('data-complete') === '1');
         }).length;
         return {
@@ -526,13 +535,27 @@
           color: #dee2e6 !important;
         }
 
-        /* ── Fix 1: Erledigt – sattes Grün mit weißem Text ── */
-        li.subtile[data-completion-state="1"] .completioncheckbox {
+        /* ── Fix 1: Erledigt – sattes Grün mit weißem Text ──
+           State 1 = erledigt, State 2 = erledigt (Bestehensgrenze erreicht) */
+        li.subtile[data-completion-state="1"] .completioncheckbox,
+        li.subtile[data-completion-state="2"] .completioncheckbox {
           background-color: #198754 !important;
           border-color: #146c43 !important;
           color: #fff !important;
         }
-        li.subtile[data-completion-state="1"] .completioncheckbox .fa-check {
+        li.subtile[data-completion-state="1"] .completioncheckbox .fa-check,
+        li.subtile[data-completion-state="2"] .completioncheckbox .fa-check {
+          color: #fff !important;
+          visibility: visible !important;
+        }
+
+        /* State 3 = erledigt, aber nicht bestanden – rot statt grün */
+        li.subtile[data-completion-state="3"] .completioncheckbox {
+          background-color: #dc3545 !important;
+          border-color: #b02a37 !important;
+          color: #fff !important;
+        }
+        li.subtile[data-completion-state="3"] .completioncheckbox .fa-check {
           color: #fff !important;
           visibility: visible !important;
         }
@@ -601,7 +624,8 @@
           flex-shrink: 0;
         }
         /* Pflichtaufgaben die erledigt sind */
-        li.subtile.mandatory-task[data-completion-state="1"] .mandatory-label {
+        li.subtile.mandatory-task[data-completion-state="1"] .mandatory-label,
+        li.subtile.mandatory-task[data-completion-state="2"] .mandatory-label {
           background-color: #198754;
         }
 
