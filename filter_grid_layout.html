@@ -590,9 +590,21 @@
           color: inherit !important;
         }
 
-        /* Leeres div nach dem Link entfernt */
-        li.subtile .contentafterlink {
+        /* Leeres div nach dem Link entfernt. Enthält es aber Voraussetzungen
+           (Moodle-Badge "Eingeschränkt" mit Tooltip), muss es sichtbar bleiben. */
+        li.subtile .contentafterlink:not(:has(.availabilityinfo)) {
           display: none !important;
+        }
+        li.subtile .contentafterlink:has(.availabilityinfo) {
+          display: flex !important;
+          align-items: center !important;
+          flex-shrink: 0 !important;
+          margin: 0 8px 0 4px !important;
+          padding: 0 !important;
+        }
+        li.subtile .availabilityinfo {
+          margin: 0 !important;
+          cursor: help;
         }
 
         /* ── Dynamische Phasen: Progress-Counter & Left-Border ── */
