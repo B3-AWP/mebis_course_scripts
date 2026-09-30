@@ -182,6 +182,108 @@
         });
       }
 
+      // === EINGESCHRÄNKTE AKTIVITÄTEN: SCHLOSS-PILLE + BEDINGUNGEN ===
+
+      // Moodle legt die Bedingungen nur in den Tooltip des Badges
+      // "Eingeschränkt". Der ist auf Touch-Geräten und per Tastatur nicht
+      // erreichbar - deshalb lesen wir ihn aus und zeigen ihn als zweite
+      // Zeile unter dem Titel an.
+      function parseRestriction(badge) {
+        var raw = badge.getAttribute('data-bs-original-title') ||
+          badge.getAttribute('data-bs-title') ||
+          badge.getAttribute('title') || '';
+        if (!raw) return null;
+        // DOMParser führt keine Skripte/Handler aus, anders als innerHTML
+        var doc = new DOMParser().parseFromString(raw, 'text/html');
+        var lines;
+        var leafItems = Array.from(doc.querySelectorAll('li')).filter(
+          function(li) { return !li.querySelector('li'); });
+        if (leafItems.length) {
+          lines = leafItems.map(function(li) { return li.textContent; });
+          lines.unshift(doc.body.firstChild ? doc.body.firstChild.textContent : '');
+        } else {
+          lines = doc.body.textContent.split('\n');
+        }
+        lines = lines.map(function(l) {
+          return l.replace(/\s+/g, ' ').trim();
+        }).filter(Boolean);
+
+        // Kopfzeile "Nicht verfügbar, außer: ..." entfernen. Enthält sie
+        // "eine der", sind die Bedingungen ODER-verknüpft.
+        var anyOf = false;
+        if (lines.length && /^Nicht verfügbar/i.test(lines[0])) {
+          anyOf = /eine der|mindestens eine/i.test(lines[0]);
+          lines.shift();
+        }
+
+        var conditions = lines.map(function(l) {
+          var m = l.match(/^Sie haben ['‘‚„"](.+?)['’‘“"] erhalten\.?$/);
+          if (m) return 'Abzeichen „' + m[1] + '“';
+          m = l.match(/^Die Aktivität (.+?) (?:ist|muss) als abgeschlossen markiert(?: sein)?\.?$/);
+          if (m) return m[1] + ' abgeschlossen';
+          return l.replace(/\.$/, '');
+        });
+        if (!conditions.length) return null;
+        return { anyOf: anyOf, conditions: conditions };
+      }
+
+      // Jede Bedingung als eigener Chip - ein Textrenner wie "·" wäre
+      // mehrdeutig, weil Aktivitätsnamen ihn selbst enthalten.
+      function buildConditionsEl(parsed) {
+        var cond = document.createElement('div');
+        cond.className = 'avail-conditions';
+        var intro = document.createElement('span');
+        intro.className = 'avail-intro';
+        intro.textContent = parsed.anyOf ? 'Benötigt eines davon:' : 'Benötigt:';
+        cond.appendChild(intro);
+        parsed.conditions.forEach(function(c) {
+          var chip = document.createElement('span');
+          chip.className = 'avail-chip';
+          chip.textContent = c;
+          cond.appendChild(chip);
+        });
+        return cond;
+      }
+
+      function updateRestrictions() {
+        document.querySelectorAll('li.subtile').forEach(function(li) {
+          var h5 = li.querySelector('.activityname h5');
+          // Titelzusatz "(Voraussetzung: ...)" entfällt - die echten
+          // Bedingungen stehen jetzt in der zweiten Zeile.
+          if (h5) {
+            var text = h5.textContent;
+            var cleaned = text.replace(/\s*\(Voraussetzung[^)]*\)\s*$/i, '');
+            if (cleaned && cleaned !== text) h5.textContent = cleaned;
+          }
+
+          var activityname = li.querySelector('.activityname');
+          var oldCond = li.querySelector('.avail-conditions');
+          if (oldCond) oldCond.remove();
+          var oldPill = li.querySelector('.lock-pill');
+          if (oldPill) oldPill.remove();
+
+          var info = li.querySelector('.availabilityinfo.isrestricted');
+          if (!info) {
+            li.classList.remove('is-restricted');
+            return;
+          }
+          li.classList.add('is-restricted');
+
+          var badge = info.querySelector('.badge') || info;
+          // Ohne Tooltip (Bedingungen verborgen) bleibt nur die Schloss-Pille
+          var parsed = parseRestriction(badge);
+          if (activityname && parsed) {
+            activityname.appendChild(buildConditionsEl(parsed));
+          }
+
+          var pill = document.createElement('span');
+          pill.className = 'lock-pill';
+          pill.innerHTML = '<i class="fa fa-lock" aria-hidden="true"></i>' +
+            '<span class="cl-label">Gesperrt</span>';
+          li.appendChild(pill);
+        });
+      }
+
       // === DYNAMISCHE PHASEN: STATUS, COUNTER, LEFT-BORDER ===
 
       function findPhaseLabels() {
@@ -300,6 +402,7 @@
       }
 
       updateCompletionLabels();
+      updateRestrictions();
       updatePhases();
 
       // Debounce-Guard verhindert Endlosschleife
@@ -312,6 +415,7 @@
           removeActivityTitlePrefixes();
           markMandatoryTasks();
           updateCompletionLabels();
+          updateRestrictions();
           updatePhases();
           _updating = false;
         }, 50);
@@ -325,6 +429,8 @@
             return !cls.contains('cl-label')
                 && !cls.contains('phase-counter')
                 && !cls.contains('mandatory-label')
+                && !cls.contains('avail-conditions')
+                && !cls.contains('lock-pill')
                 && !(n.tagName === 'I' && n.closest && n.closest('.rounded-circle'));
           });
         });
@@ -590,21 +696,65 @@
           color: inherit !important;
         }
 
-        /* Leeres div nach dem Link entfernt. Enthält es aber Voraussetzungen
-           (Moodle-Badge "Eingeschränkt" mit Tooltip), muss es sichtbar bleiben. */
-        li.subtile .contentafterlink:not(:has(.availabilityinfo)) {
+        /* Div nach dem Link ausblenden. Das Moodle-Badge "Eingeschränkt"
+           darin wird per JS durch Schloss-Pille + Bedingungszeile ersetzt. */
+        li.subtile .contentafterlink {
           display: none !important;
         }
-        li.subtile .contentafterlink:has(.availabilityinfo) {
-          display: flex !important;
-          align-items: center !important;
-          flex-shrink: 0 !important;
-          margin: 0 8px 0 4px !important;
-          padding: 0 !important;
+
+        /* ── Eingeschränkte Aktivitäten ── */
+        li.subtile.is-restricted a.cm-link,
+        li.subtile.is-restricted div.cm-inner {
+          opacity: 0.75;
         }
-        li.subtile .availabilityinfo {
-          margin: 0 !important;
-          cursor: help;
+        li.subtile.is-restricted .tile-icon img.icon {
+          filter: grayscale(1) !important;
+        }
+        li.subtile.is-restricted .completioncheckbox {
+          display: none !important;
+        }
+        /* Bedingungen als zweite Zeile unter dem Titel */
+        li.subtile .activityname {
+          flex-wrap: wrap !important;
+        }
+        li.subtile .avail-conditions {
+          flex-basis: 100%;
+          display: flex;
+          flex-wrap: wrap;
+          align-items: center;
+          gap: 4px;
+          font-size: 12px;
+          line-height: 1.35;
+          color: #6c757d;
+        }
+        li.subtile .avail-chip {
+          padding: 1px 8px;
+          border: 1px solid #dee2e6;
+          border-radius: 10px;
+          background: #f8f9fa;
+          white-space: normal;
+        }
+        /* Schloss-Pille in der Statusspalte, gleiche Form wie "Offen" */
+        li.subtile .lock-pill {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          align-self: center;
+          gap: 4px;
+          flex-shrink: 0;
+          min-width: 78px;
+          margin: 0 8px 0 4px;
+          padding: 3px 10px;
+          border-radius: 20px;
+          font-size: 11px;
+          font-weight: 500;
+          white-space: nowrap;
+          background-color: #f8f9fa;
+          border: 1.5px solid #dee2e6;
+          color: #6c757d;
+        }
+        li.subtile .lock-pill .fa-lock {
+          font-size: 11px;
         }
 
         /* ── Dynamische Phasen: Progress-Counter & Left-Border ── */
@@ -657,8 +807,13 @@
             min-width: 38px !important;
             padding: 3px 8px !important;
           }
-          li.subtile .completioncheckbox .cl-label {
+          li.subtile .completioncheckbox .cl-label,
+          li.subtile .lock-pill .cl-label {
             display: none !important;
+          }
+          li.subtile .lock-pill {
+            min-width: 38px;
+            padding: 3px 8px;
           }
         }
       `;
